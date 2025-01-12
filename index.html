@@ -10,55 +10,46 @@ featured_image: /images/demo/home.jpg
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login, Register & Submit Hours</title>
+  <title>Time Tracking Calendar</title>
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <div class="wrap form-page">
-    <h1 class="title">Welcome to Autonomy Heroes</h1>
+  <div class="wrap calendar-page">
+    <h1 class="title">Time Tracking Calendar</h1>
 
-    <div class="form-container">
-      <!-- Toggle Buttons -->
-      <div class="button-group">
-        <button id="show-login" class="btn btn-primary active" onclick="showLoginForm()">Login</button>
-        <button id="show-register" class="btn btn-secondary" onclick="showRegisterForm()">Register</button>
-      </div>
-
-      <!-- Login Form -->
-      <form id="login-form" class="form">
-        <h2 class="form-title">Login</h2>
-        <input type="email" id="login-email" class="input-field" placeholder="Work Email" required>
-        <input type="password" id="login-password" class="input-field" placeholder="Password" required>
-        <button type="button" class="btn btn-primary" onclick="loginUser()">Login</button>
-      </form>
-
-      <!-- Register Form -->
-      <form id="register-form" class="form" style="display:none;">
-        <h2 class="form-title">Create an Account</h2>
-        <input type="text" id="first-name" class="input-field" placeholder="First Name" required>
-        <input type="text" id="last-name" class="input-field" placeholder="Last Name" required>
-        <input type="email" id="work-email" class="input-field" placeholder="Work Email" required>
-        <input type="password" id="password" class="input-field" placeholder="Password" required>
-        <button type="button" class="btn btn-secondary" onclick="registerUser()">Register</button>
-      </form>
+    <!-- Calendar Navigation -->
+    <div class="calendar-navigation">
+      <button id="prev-month" class="btn btn-secondary">← Previous Month</button>
+      <span id="current-month" class="calendar-title">January 2025</span>
+      <button id="next-month" class="btn btn-secondary">Next Month →</button>
     </div>
 
-    <!-- Hours Submission Form -->
-    <div id="hours-form" class="form" style="display:none;">
-      <h2 class="form-title">Submit Your Hours</h2>
-      <label for="week">Select Week:</label>
-      <input type="week" id="week" class="input-field" required>
+    <!-- Calendar Grid -->
+    <div id="calendar-grid" class="calendar-grid">
+      <!-- Calendar days will be dynamically generated here -->
+    </div>
 
-      <label for="hours">Hours Worked:</label>
-      <input type="number" id="hours" class="input-field" placeholder="Enter total hours" required>
+    <!-- Time Entry Modal -->
+    <div id="time-entry-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <h3 id="modal-date">Date</h3>
+        <label for="modal-hours">Hours Worked:</label>
+        <input type="number" id="modal-hours" class="input-field" min="0" max="24" placeholder="Enter hours" required>
+        <label for="modal-time-off">Request Time Off:</label>
+        <input type="checkbox" id="modal-time-off">
+        <button type="button" class="btn btn-primary" onclick="saveTimeEntry()">Save</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
 
-      <label for="days-off">Days Off Requested:</label>
-      <input type="text" id="days-off" class="input-field" placeholder="Enter days off (e.g., Mon, Tue)" required>
-
-      <button type="button" class="btn btn-primary" onclick="submitHours()">Submit Hours</button>
+    <!-- Week Submission Section -->
+    <div id="week-summary" class="week-summary">
+      <h2>Week Summary</h2>
+      <p id="total-hours">Total Hours: 0</p>
+      <button type="button" class="btn btn-primary" onclick="submitWeek()">Submit Week for Approval</button>
     </div>
   </div>
 
@@ -75,98 +66,65 @@ featured_image: /images/demo/home.jpg
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Toggle between Login and Register forms
-    function showLoginForm() {
-      document.getElementById('login-form').style.display = 'block';
-      document.getElementById('register-form').style.display = 'none';
-      document.getElementById('hours-form').style.display = 'none';
-      document.getElementById('show-login').classList.add('active');
-      document.getElementById('show-register').classList.remove('active');
-    }
+    // Calendar Functions
+    let selectedMonth = new Date();
+    const calendarGrid = document.getElementById('calendar-grid');
+    const currentMonthLabel = document.getElementById('current-month');
 
-    function showRegisterForm() {
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('register-form').style.display = 'block';
-      document.getElementById('hours-form').style.display = 'none';
-      document.getElementById('show-login').classList.remove('active');
-      document.getElementById('show-register').classList.add('active');
-    }
+    function updateCalendar() {
+      const daysInMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0).getDate();
+      calendarGrid.innerHTML = '';
 
-    // Register User
-    function registerUser() {
-      const firstName = document.getElementById('first-name').value;
-      const lastName = document.getElementById('last-name').value;
-      const email = document.getElementById('work-email').value;
-      const password = document.getElementById('password').value;
-
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-          const user = userCredential.user;
-          const registrationDate = new Date().toISOString();
-
-          return db.collection('users').doc(user.uid).set({
-            firstName,
-            lastName,
-            email,
-            registrationDate,
-            hours: [] // Initialize with an empty array to store hours submissions
-          });
-        })
-        .then(() => {
-          alert('Account created successfully!');
-          showHoursForm();
-        })
-        .catch(error => alert(error.message));
-    }
-
-    // Login User
-    function loginUser() {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-
-      auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
-          alert('Login successful!');
-          showHoursForm();
-        })
-        .catch(error => alert(error.message));
-    }
-
-    // Show Hours Submission Form
-    function showHoursForm() {
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('register-form').style.display = 'none';
-      document.getElementById('hours-form').style.display = 'block';
-    }
-
-    // Submit Hours
-    function submitHours() {
-      const week = document.getElementById('week').value;
-      const hours = document.getElementById('hours').value;
-      const daysOff = document.getElementById('days-off').value;
-      const user = auth.currentUser;
-
-      if (user) {
-        db.collection('users').doc(user.uid).update({
-          hours: firebase.firestore.FieldValue.arrayUnion({
-            week,
-            hours,
-            daysOff
-          })
-        })
-        .then(() => {
-          alert('Hours submitted successfully!');
-        })
-        .catch(error => alert(error.message));
-      } else {
-        alert('You need to log in to submit hours.');
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'calendar-day';
+        dayElement.innerText = day;
+        dayElement.onclick = () => openModal(day);
+        calendarGrid.appendChild(dayElement);
       }
+
+      currentMonthLabel.innerText = selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
+
+    function openModal(day) {
+      const modal = document.getElementById('time-entry-modal');
+      const modalDate = document.getElementById('modal-date');
+      modalDate.innerText = `${selectedMonth.toLocaleDateString('en-US', { month: 'long' })} ${day}, ${selectedMonth.getFullYear()}`;
+      modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('time-entry-modal');
+      modal.style.display = 'none';
+    }
+
+    function saveTimeEntry() {
+      const hours = document.getElementById('modal-hours').value;
+      const isTimeOff = document.getElementById('modal-time-off').checked;
+      alert(`Hours: ${hours}, Time Off: ${isTimeOff}`);
+      closeModal();
+    }
+
+    function submitWeek() {
+      alert('Week submitted for approval!');
+    }
+
+    // Navigation Buttons
+    document.getElementById('prev-month').onclick = () => {
+      selectedMonth.setMonth(selectedMonth.getMonth() - 1);
+      updateCalendar();
+    };
+
+    document.getElementById('next-month').onclick = () => {
+      selectedMonth.setMonth(selectedMonth.getMonth() + 1);
+      updateCalendar();
+    };
+
+    // Initialize Calendar
+    updateCalendar();
   </script>
 </body>
 </html>
-
 
