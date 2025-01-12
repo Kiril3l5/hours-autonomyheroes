@@ -18,7 +18,7 @@ featured_image: /images/demo/home.jpg
 </head>
 <body>
   <div class="wrap form-page">
-    <h1 class="title">Submit hours</h1>
+    <h1 class="title">Welcome to Autonomy Heroes</h1>
 
     <div class="form-container">
       <!-- Toggle Buttons -->
@@ -101,7 +101,10 @@ featured_image: /images/demo/home.jpg
         .then(() => {
           alert('Account created successfully!');
         })
-        .catch(error => alert(error.message));
+        .catch(error => {
+          console.error('Error:', error);
+          alert(error.message);
+        });
     }
 
     // Login User
@@ -113,8 +116,12 @@ featured_image: /images/demo/home.jpg
         .then(() => {
           alert('Login successful!');
         })
-        .catch(error => alert(error.message));
+        .catch(error => {
+          console.error('Error:', error);
+          alert(error.message);
+        });
     }
   </script>
 </body>
 </html>
+
