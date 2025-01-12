@@ -25,7 +25,7 @@ contact_settings:
   send_button_text: 'Send Message'
 
 social_settings:
-  facebook_url: 'https://www.facebook.com/profile.php?id=61566949448379'
+  facebook_url: ''
   twitter_url: ''
   instagram_url: ''
   snapchat_url: ''
@@ -50,7 +50,7 @@ social_settings:
   soundcloud_url: ''
   spotify_url: ''
   bandcamp_url: ''
-  linkedin_url: 'https://linkedin.com/company/autonomy-heroes'
+  linkedin_url: ''
 
 color_settings:
   background_color: '#ffffff'

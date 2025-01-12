@@ -10,7 +10,7 @@ featured_image: /images/demo/home.jpg
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login & Register</title>
+  <title>Login, Register & Submit Hours</title>
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
@@ -45,17 +45,32 @@ featured_image: /images/demo/home.jpg
         <button type="button" class="btn btn-secondary" onclick="registerUser()">Register</button>
       </form>
     </div>
+
+    <!-- Hours Submission Form -->
+    <div id="hours-form" class="form" style="display:none;">
+      <h2 class="form-title">Submit Your Hours</h2>
+      <label for="week">Select Week:</label>
+      <input type="week" id="week" class="input-field" required>
+
+      <label for="hours">Hours Worked:</label>
+      <input type="number" id="hours" class="input-field" placeholder="Enter total hours" required>
+
+      <label for="days-off">Days Off Requested:</label>
+      <input type="text" id="days-off" class="input-field" placeholder="Enter days off (e.g., Mon, Tue)" required>
+
+      <button type="button" class="btn btn-primary" onclick="submitHours()">Submit Hours</button>
+    </div>
   </div>
 
   <script>
     // Firebase Config
     const firebaseConfig = {
-      apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-      authDomain: "autonomy-heroes.firebaseapp.com",
-      projectId: "autonomy-heroes",
-      storageBucket: "autonomy-heroes.firebasestorage.app",
-      messagingSenderId: "266526530869",
-      appId: "1:266526530869:web:ea95143735be497ca8007c"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     // Initialize Firebase
@@ -67,6 +82,7 @@ featured_image: /images/demo/home.jpg
     function showLoginForm() {
       document.getElementById('login-form').style.display = 'block';
       document.getElementById('register-form').style.display = 'none';
+      document.getElementById('hours-form').style.display = 'none';
       document.getElementById('show-login').classList.add('active');
       document.getElementById('show-register').classList.remove('active');
     }
@@ -74,6 +90,7 @@ featured_image: /images/demo/home.jpg
     function showRegisterForm() {
       document.getElementById('login-form').style.display = 'none';
       document.getElementById('register-form').style.display = 'block';
+      document.getElementById('hours-form').style.display = 'none';
       document.getElementById('show-login').classList.remove('active');
       document.getElementById('show-register').classList.add('active');
     }
@@ -100,11 +117,9 @@ featured_image: /images/demo/home.jpg
         })
         .then(() => {
           alert('Account created successfully!');
+          showHoursForm();
         })
-        .catch(error => {
-          console.error('Error:', error);
-          alert(error.message);
-        });
+        .catch(error => alert(error.message));
     }
 
     // Login User
@@ -115,13 +130,43 @@ featured_image: /images/demo/home.jpg
       auth.signInWithEmailAndPassword(email, password)
         .then(() => {
           alert('Login successful!');
+          showHoursForm();
         })
-        .catch(error => {
-          console.error('Error:', error);
-          alert(error.message);
-        });
+        .catch(error => alert(error.message));
+    }
+
+    // Show Hours Submission Form
+    function showHoursForm() {
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('register-form').style.display = 'none';
+      document.getElementById('hours-form').style.display = 'block';
+    }
+
+    // Submit Hours
+    function submitHours() {
+      const week = document.getElementById('week').value;
+      const hours = document.getElementById('hours').value;
+      const daysOff = document.getElementById('days-off').value;
+      const user = auth.currentUser;
+
+      if (user) {
+        db.collection('users').doc(user.uid).update({
+          hours: firebase.firestore.FieldValue.arrayUnion({
+            week,
+            hours,
+            daysOff
+          })
+        })
+        .then(() => {
+          alert('Hours submitted successfully!');
+        })
+        .catch(error => alert(error.message));
+      } else {
+        alert('You need to log in to submit hours.');
+      }
     }
   </script>
 </body>
 </html>
+
 
