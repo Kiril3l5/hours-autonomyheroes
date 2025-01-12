@@ -4,127 +4,300 @@ title: Submit hours
 description: Please submit your hours
 featured_image: /images/demo/home.jpg
 ---
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Time Tracking Calendar</title>
-  <link rel="stylesheet" href="/css/style.css">
-  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time Tracking Calendar</title>
+
+    <!-- React and ReactDOM from CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Firebase from CDN -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Roboto Condensed', sans-serif;
+            background-color: #ffffff;
+            color: #2A2F36;
+        }
+
+        h1 {
+            font-size: 45px;
+            font-weight: 700;
+            color: #ff8d00;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-container {
+            background-color: #f4f5f6;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-day {
+            background-color: #ffffff;
+            border: 2px solid #ff8d00;
+            border-radius: 8px;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .calendar-day:hover {
+            background-color: #ff8d00;
+            color: #ffffff;
+        }
+
+        .week-summary {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #ffffff;
+            border: 2px solid #ff8d00;
+            border-radius: 8px;
+        }
+
+        .btn {
+            background-color: #ff8d00;
+            color: #ffffff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn:hover {
+            background-color: #e67c00;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 18px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            border: 2px solid #ff8d00;
+            border-radius: 4px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #6C7A89;
+        }
+    </style>
 </head>
 <body>
-  <div class="wrap calendar-page">
-    <h1 class="title">Time Tracking Calendar</h1>
+    <div id="root"></div>
 
-    <!-- Calendar Navigation -->
-    <div class="calendar-navigation">
-      <button id="prev-month" class="btn btn-secondary">← Previous Month</button>
-      <span id="current-month" class="calendar-title">January 2025</span>
-      <button id="next-month" class="btn btn-secondary">Next Month →</button>
-    </div>
+    <script type="text/babel">
+        // Firebase initialization
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+            authDomain: "autonomy-heroes.firebaseapp.com",
+            projectId: "autonomy-heroes",
+            storageBucket: "autonomy-heroes.firebasestorage.app",
+            messagingSenderId: "266526530869",
+            appId: "1:266526530869:web:ea95143735be497ca8007c"
+        };
 
-    <!-- Calendar Grid -->
-    <div id="calendar-grid" class="calendar-grid">
-      <!-- Calendar days will be dynamically generated here -->
-    </div>
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    <!-- Time Entry Modal -->
-    <div id="time-entry-modal" class="modal" style="display:none;">
-      <div class="modal-content">
-        <h3 id="modal-date">Date</h3>
-        <label for="modal-hours">Hours Worked:</label>
-        <input type="number" id="modal-hours" class="input-field" min="0" max="24" placeholder="Enter hours" required>
-        <label for="modal-time-off">Request Time Off:</label>
-        <input type="checkbox" id="modal-time-off">
-        <button type="button" class="btn btn-primary" onclick="saveTimeEntry()">Save</button>
-        <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-      </div>
-    </div>
+        function TimeTrackingCalendar() {
+            const [currentDate, setCurrentDate] = React.useState(new Date());
+            const [timeEntries, setTimeEntries] = React.useState({});
+            const [submittedWeeks, setSubmittedWeeks] = React.useState([]);
+            const [user, setUser] = React.useState(null);
 
-    <!-- Week Submission Section -->
-    <div id="week-summary" class="week-summary">
-      <h2>Week Summary</h2>
-      <p id="total-hours">Total Hours: 0</p>
-      <button type="button" class="btn btn-primary" onclick="submitWeek()">Submit Week for Approval</button>
-    </div>
-  </div>
+            React.useEffect(() => {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        setUser(user);
+                        loadTimeEntries(user.uid);
+                    }
+                });
+            }, []);
 
-  <script>
-    // Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-      authDomain: "autonomy-heroes.firebaseapp.com",
-      projectId: "autonomy-heroes",
-      storageBucket: "autonomy-heroes.firebasestorage.app",
-      messagingSenderId: "266526530869",
-      appId: "1:266526530869:web:ea95143735be497ca8007c"
-    };
+            const loadTimeEntries = (userId) => {
+                db.collection('timeEntries').doc(userId).get().then((doc) => {
+                    if (doc.exists) {
+                        setTimeEntries(doc.data());
+                    }
+                });
+            };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+            const isCurrentWeek = (day) => {
+                const today = new Date();
+                const firstDayOfWeek = today.getDate() - today.getDay() + 1;
+                return day >= firstDayOfWeek && day < firstDayOfWeek + 7;
+            };
 
-    // Calendar Functions
-    let selectedMonth = new Date();
-    const calendarGrid = document.getElementById('calendar-grid');
-    const currentMonthLabel = document.getElementById('current-month');
+            const isPastWeek = (day) => {
+                const today = new Date();
+                return new Date(currentDate.getFullYear(), currentDate.getMonth(), day) < today;
+            };
 
-    function updateCalendar() {
-      const daysInMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 0).getDate();
-      calendarGrid.innerHTML = '';
+            const openTimeEntryModal = (dateKey) => {
+                const entry = timeEntries[dateKey] || {};
+                const hours = entry.hours || 8;
+                const timeOff = entry.timeOff || false;
+                const approved = entry.approved || false;
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-        dayElement.innerText = day;
-        dayElement.onclick = () => openModal(day);
-        calendarGrid.appendChild(dayElement);
-      }
+                const modalContent = (
+                    <div className="modal-content">
+                        <h3>{dateKey}</h3>
+                        <label>Hours Worked:</label>
+                        <input type="number" defaultValue={hours} min="0" max="24" id="hours-input" onChange={(e) => handleHoursChange(dateKey, e.target.value)} />
+                        <label>
+                            <input type="checkbox" defaultChecked={timeOff} id="timeoff-checkbox" onChange={() => handleTimeOffToggle(dateKey)} /> Time off was requested in advance and approved by manager
+                        </label>
+                        {hours < 8 && (
+                            <label>
+                                <input type="checkbox" id="shortday-checkbox" onChange={() => handleShortDayApproval(dateKey)} /> Manager is aware of less than 8h work day
+                            </label>
+                        )}
+                        {hours > 8 && (
+                            <label>
+                                <input type="checkbox" defaultChecked={approved} id="overtime-checkbox" onChange={() => handleOvertimeToggle(dateKey)} /> Overtime was approved by manager
+                            </label>
+                        )}
+                        <button onClick={() => saveTimeEntry(dateKey)}>Save</button>
+                    </div>
+                );
 
-      currentMonthLabel.innerText = selectedMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    }
+                document.getElementById('modal').innerHTML = ReactDOM.createPortal(modalContent, document.getElementById('root'));
+            };
 
-    function openModal(day) {
-      const modal = document.getElementById('time-entry-modal');
-      const modalDate = document.getElementById('modal-date');
-      modalDate.innerText = `${selectedMonth.toLocaleDateString('en-US', { month: 'long' })} ${day}, ${selectedMonth.getFullYear()}`;
-      modal.style.display = 'block';
-    }
+            const handleHoursChange = (dateKey, hours) => {
+                if (hours === "0") {
+                    const updatedEntries = { ...timeEntries };
+                    delete updatedEntries[dateKey];
+                    setTimeEntries(updatedEntries);
+                } else {
+                    setTimeEntries((prevEntries) => ({
+                        ...prevEntries,
+                        [dateKey]: { ...prevEntries[dateKey], hours: parseInt(hours, 10) }
+                    }));
+                }
+            };
 
-    function closeModal() {
-      const modal = document.getElementById('time-entry-modal');
-      modal.style.display = 'none';
-    }
+            const handleTimeOffToggle = (dateKey) => {
+                setTimeEntries((prevEntries) => ({
+                    ...prevEntries,
+                    [dateKey]: { ...prevEntries[dateKey], timeOff: !prevEntries[dateKey]?.timeOff }
+                }));
+            };
 
-    function saveTimeEntry() {
-      const hours = document.getElementById('modal-hours').value;
-      const isTimeOff = document.getElementById('modal-time-off').checked;
-      alert(`Hours: ${hours}, Time Off: ${isTimeOff}`);
-      closeModal();
-    }
+            const handleShortDayApproval = (dateKey) => {
+                setTimeEntries((prevEntries) => ({
+                    ...prevEntries,
+                    [dateKey]: { ...prevEntries[dateKey], shortDayApproved: !prevEntries[dateKey]?.shortDayApproved }
+                }));
+            };
 
-    function submitWeek() {
-      alert('Week submitted for approval!');
-    }
+            const handleOvertimeToggle = (dateKey) => {
+                setTimeEntries((prevEntries) => ({
+                    ...prevEntries,
+                    [dateKey]: { ...prevEntries[dateKey], approved: !prevEntries[dateKey]?.approved }
+                }));
+            };
 
-    // Navigation Buttons
-    document.getElementById('prev-month').onclick = () => {
-      selectedMonth.setMonth(selectedMonth.getMonth() - 1);
-      updateCalendar();
-    };
+            const saveTimeEntry = (dateKey) => {
+                console.log(`Saved entry for ${dateKey}`);
+            };
 
-    document.getElementById('next-month').onclick = () => {
-      selectedMonth.setMonth(selectedMonth.getMonth() + 1);
-      updateCalendar();
-    };
+            const submitWeek = () => {
+                if (!user) return;
 
-    // Initialize Calendar
-    updateCalendar();
-  </script>
+                const weekEntries = Object.keys(timeEntries).filter((dateKey) => isCurrentWeek(new Date(dateKey).getDate()));
+                const weekData = weekEntries.reduce((acc, dateKey) => {
+                    if (timeEntries[dateKey].hours < 8 && !timeEntries[dateKey].shortDayApproved) {
+                        alert("Cannot submit week. Manager awareness required for short days.");
+                        return acc;
+                    }
+                    acc[dateKey] = timeEntries[dateKey];
+                    return acc;
+                }, {});
+        db.collection('timeEntries').doc(user.uid).set(weekData).then(() => {
+                    setSubmittedWeeks((prevWeeks) => [...prevWeeks, getCurrentWeekKey()]);
+                    alert('Week submitted successfully!');
+                });
+            };
+
+            const getCurrentWeekKey = () => {
+                const today = new Date();
+                return `${today.getFullYear()}-W${Math.ceil((today.getDate() + today.getDay() + 1) / 7)}`;
+            };
+
+            const renderCalendar = () => {
+                const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+                const days = [];
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
+                    const entry = timeEntries[dateKey] || {};
+                    const isWeek = isCurrentWeek(day);
+                    const isPast = isPastWeek(day);
+                    const isLocked = submittedWeeks.includes(getCurrentWeekKey());
+
+                    days.push(
+                        <div
+                            key={day}
+                            className={`calendar-day p-4 border rounded ${isWeek ? 'border-orange-500 bg-orange-50' : isPast ? 'bg-gray-200 cursor-not-allowed' : isLocked ? 'bg-gray-300 cursor-not-allowed' : 'border-gray-300 hover:bg-gray-100 cursor-pointer'}`}
+                            onClick={() => !isPast && !isLocked && openTimeEntryModal(dateKey)}
+                        >
+                            <p className="font-bold">{day}</p>
+                            {entry.hours && <p>{entry.hours} hrs</p>}
+                            {entry.timeOff && <p className="text-red-500">Time Off</p>}
+                            {entry.approved && <p className="text-green-500">Approved</p>}
+                        </div>
+                    );
+                }
+
+                return days;
+            };
+
+            return (
+                <div className="calendar-container max-w-4xl mx-auto p-4">
+                    <h1 className="text-2xl font-bold text-center mb-4">Time Tracking Calendar</h1>
+                    <div className="grid grid-cols-7 gap-4">{renderCalendar()}</div>
+                    <div id="modal"></div>
+                    <div className="week-summary">
+                        <h2>Weekly Summary</h2>
+                        <p>Total Hours: {Object.values(timeEntries).reduce((total, entry) => total + (entry.hours || 0), 0)}</p>
+                        <button className="btn btn-primary" onClick={submitWeek}>Submit Week</button>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TimeTrackingCalendar />);
+    </script>
 </body>
 </html>
+               
 
