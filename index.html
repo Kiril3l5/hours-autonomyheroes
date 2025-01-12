@@ -45,11 +45,55 @@ featured_image: /images/demo/home.jpg
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        function LoginPage({ onLogin }) {
-            const [email, setEmail] = React.useState("");
-            const [password, setPassword] = React.useState("");
+        // Helper function to create elements
+        function createElement(type, props, ...children) {
+            const element = document.createElement(type);
+            for (const [key, value] of Object.entries(props || {})) {
+                if (key.startsWith("on") && typeof value === "function") {
+                    element.addEventListener(key.substring(2).toLowerCase(), value);
+                } else {
+                    element[key] = value;
+                }
+            }
+            children.forEach(child => {
+                if (typeof child === "string") {
+                    element.appendChild(document.createTextNode(child));
+                } else {
+                    element.appendChild(child);
+                }
+            });
+            return element;
+        }
 
-            const handleLogin = () => {
+        function LoginPage(onLogin) {
+            const container = createElement("div", { className: "max-w-md mx-auto mt-20 p-8 bg-white shadow-md rounded" },
+                createElement("h1", { className: "text-2xl font-bold mb-4" }, "Login or Register"),
+                createElement("input", {
+                    type: "email",
+                    placeholder: "Email",
+                    className: "w-full p-2 mb-4 border rounded",
+                    oninput: (e) => email = e.target.value
+                }),
+                createElement("input", {
+                    type: "password",
+                    placeholder: "Password",
+                    className: "w-full p-2 mb-4 border rounded",
+                    oninput: (e) => password = e.target.value
+                }),
+                createElement("button", {
+                    className: "btn w-full mb-2",
+                    onclick: handleLogin
+                }, "Login"),
+                createElement("button", {
+                    className: "btn w-full",
+                    onclick: handleRegister
+                }, "Register")
+            );
+
+            let email = "";
+            let password = "";
+
+            function handleLogin() {
                 auth.signInWithEmailAndPassword(email, password)
                     .then(userCredential => {
                         onLogin(userCredential.user);
@@ -57,9 +101,9 @@ featured_image: /images/demo/home.jpg
                     .catch(error => {
                         alert("Login failed: " + error.message);
                     });
-            };
+            }
 
-            const handleRegister = () => {
+            function handleRegister() {
                 auth.createUserWithEmailAndPassword(email, password)
                     .then(userCredential => {
                         onLogin(userCredential.user);
@@ -67,90 +111,57 @@ featured_image: /images/demo/home.jpg
                     .catch(error => {
                         alert("Registration failed: " + error.message);
                     });
-            };
+            }
 
-            return (
-                <div className="max-w-md mx-auto mt-20 p-8 bg-white shadow-md rounded">
-                    <h1 className="text-2xl font-bold mb-4">Login or Register</h1>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        className="w-full p-2 mb-4 border rounded"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        className="w-full p-2 mb-4 border rounded"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button className="btn w-full mb-2" onClick={handleLogin}>Login</button>
-                    <button className="btn w-full" onClick={handleRegister}>Register</button>
-                </div>
-            );
+            return container;
         }
 
         function TimeTrackingCalendar() {
-            const [currentDate, setCurrentDate] = React.useState(new Date());
-            const [timeEntries, setTimeEntries] = React.useState({});
-            const [submittedWeeks, setSubmittedWeeks] = React.useState([]);
-            const [user, setUser] = React.useState(null);
+            const container = createElement("div", { className: "calendar-container max-w-4xl mx-auto p-4" },
+                createElement("h1", { className: "text-2xl font-bold text-center mb-4" }, "Time Tracking Calendar"),
+                createElement("div", { className: "grid grid-cols-7 gap-4" }, ...renderCalendar())
+            );
 
-            React.useEffect(() => {
-                auth.onAuthStateChanged((user) => {
-                    if (user) {
-                        setUser(user);
-                        loadTimeEntries(user.uid);
-                    }
-                });
-            }, []);
+            const daysInMonth = new Date().getDate();
 
-            const loadTimeEntries = (userId) => {
-                db.collection('timeEntries').doc(userId).get().then((doc) => {
-                    if (doc.exists) {
-                        setTimeEntries(doc.data());
-                    }
-                });
-            };
-
-            const renderCalendar = () => {
-                const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            function renderCalendar() {
                 const days = [];
-
                 for (let day = 1; day <= daysInMonth; day++) {
-                    const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`;
-                    const entry = timeEntries[dateKey] || {};
-
                     days.push(
-                        <div key={day} className="calendar-day p-4 border rounded hover:bg-orange-100">
-                            <p className="font-bold">{day}</p>
-                            {entry.hours && <p>{entry.hours} hrs</p>}
-                        </div>
+                        createElement("div", { className: "calendar-day p-4 border rounded hover:bg-orange-100" },
+                            createElement("p", { className: "font-bold" }, day.toString())
+                        )
                     );
                 }
-
                 return days;
-            };
-
-            if (!user) {
-                return <LoginPage onLogin={setUser} />;
             }
 
-            return (
-                <div className="calendar-container max-w-4xl mx-auto p-4">
-                    <h1 className="text-2xl font-bold text-center mb-4">Time Tracking Calendar</h1>
-                    <div className="grid grid-cols-7 gap-4">{renderCalendar()}</div>
-                </div>
-            );
+            return container;
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<TimeTrackingCalendar />);
+        function App() {
+            const root = document.getElementById("root");
+            let user = null;
+
+            function handleLogin(loggedInUser) {
+                user = loggedInUser;
+                render();
+            }
+
+            function render() {
+                root.innerHTML = "";
+                if (user) {
+                    root.appendChild(TimeTrackingCalendar());
+                } else {
+                    root.appendChild(LoginPage(handleLogin));
+                }
+            }
+
+            render();
+        }
+
+        App();
     </script>
 </body>
 </html>
-
-               
 
