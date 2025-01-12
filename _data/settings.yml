@@ -7,9 +7,7 @@ header_settings:
   logo_width: 200
 
 menu_settings:
-  menu_items:
-    - title: 'Sumbit Hours'
-      url: '/submit-hours'       
+  menu_items:   
 
 footer_settings:
   footer_tagline: Autonomy Heroes LLC

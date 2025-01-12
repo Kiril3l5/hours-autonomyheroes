@@ -13,8 +13,84 @@ featured_image: /images/demo/home.jpg
 
 	<div class="wrap">
 
-		<h1>Recruiting and staffing</h1>
-		<p>Bringing autonomous future closer, one integration engineer at a time.</p>
+		<h1>Please submit your hours</h1>
+		<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Working Hours Tracker</title>
+  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore.js"></script>
+</head>
+<body>
+  <h1>Working Hours Tracker</h1>
+
+  <!-- Login Form -->
+  <div id="login-form">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Working Hours Form -->
+  <div id="working-hours-form" style="display:none;">
+    <h2>Submit Working Hours</h2>
+    <input type="date" id="date" required>
+    <input type="number" id="hours" placeholder="Hours Worked" required>
+    <button onclick="submitWorkingHours()">Submit</button>
+  </div>
+
+  <script>
+    // Your Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+      authDomain: "autonomy-heroes.firebaseapp.com",
+      projectId: "autonomy-heroes",
+      storageBucket: "autonomy-heroes.firebasestorage.app",
+      messagingSenderId: "266526530869",
+      appId: "1:266526530869:web:ea95143735be497ca8007c"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // Login Function
+    function login() {
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      auth.signInWithEmailAndPassword(email, password)
+        .then(() => {
+          document.getElementById('login-form').style.display = 'none';
+          document.getElementById('working-hours-form').style.display = 'block';
+        })
+        .catch(error => console.error(error.message));
+    }
+
+    // Submit Working Hours
+    function submitWorkingHours() {
+      const date = document.getElementById('date').value;
+      const hours = document.getElementById('hours').value;
+      const user = auth.currentUser;
+
+      if (user) {
+        db.collection('workingHours').add({
+          userId: user.uid,
+          date: date,
+          hoursWorked: parseFloat(hours),
+          status: 'pending'
+        })
+        .then(() => alert('Working hours submitted!'))
+        .catch(error => console.error(error.message));
+      }
+    }
+  </script>
+</body>
+</html>
 
 		{% include socials.html %}
 
