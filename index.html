@@ -5,7 +5,7 @@ description: Approve hours
 featured_image: /images/demo/home.jpg
 ---
 
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -36,7 +36,7 @@ featured_image: /images/demo/home.jpg
             apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
             authDomain: "autonomy-heroes.firebaseapp.com",
             projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.firebasestorage.app",
+            storageBucket: "autonomy-heroes.appspot.com",
             messagingSenderId: "266526530869",
             appId: "1:266526530869:web:ea95143735be497ca8007c"
         };
@@ -45,97 +45,91 @@ featured_image: /images/demo/home.jpg
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Helper function to create elements
-        function createElement(type, props, ...children) {
-            const element = document.createElement(type);
-            for (const [key, value] of Object.entries(props || {})) {
-                if (key.startsWith("on") && typeof value === "function") {
-                    element.addEventListener(key.substring(2).toLowerCase(), value);
-                } else {
-                    element[key] = value;
-                }
-            }
-            children.forEach(child => {
-                if (typeof child === "string") {
-                    element.appendChild(document.createTextNode(child));
-                } else {
-                    element.appendChild(child);
-                }
-            });
-            return element;
-        }
-
         function LoginPage(onLogin) {
-            const container = createElement("div", { className: "max-w-md mx-auto mt-20 p-8 bg-white shadow-md rounded" },
-                createElement("h1", { className: "text-2xl font-bold mb-4" }, "Login or Register"),
-                createElement("input", {
-                    type: "email",
-                    placeholder: "Email",
-                    className: "w-full p-2 mb-4 border rounded",
-                    oninput: (e) => email = e.target.value
-                }),
-                createElement("input", {
-                    type: "password",
-                    placeholder: "Password",
-                    className: "w-full p-2 mb-4 border rounded",
-                    oninput: (e) => password = e.target.value
-                }),
-                createElement("button", {
-                    className: "btn w-full mb-2",
-                    onclick: handleLogin
-                }, "Login"),
-                createElement("button", {
-                    className: "btn w-full",
-                    onclick: handleRegister
-                }, "Register")
-            );
+            const container = document.createElement("div");
+            container.className = "max-w-md mx-auto mt-20 p-8 bg-white shadow-md rounded";
 
-            let email = "";
-            let password = "";
+            const title = document.createElement("h1");
+            title.className = "text-2xl font-bold mb-4";
+            title.innerText = "Login or Register";
+            container.appendChild(title);
 
-            function handleLogin() {
+            const emailInput = document.createElement("input");
+            emailInput.type = "email";
+            emailInput.placeholder = "Email";
+            emailInput.className = "w-full p-2 mb-4 border rounded";
+            container.appendChild(emailInput);
+
+            const passwordInput = document.createElement("input");
+            passwordInput.type = "password";
+            passwordInput.placeholder = "Password";
+            passwordInput.className = "w-full p-2 mb-4 border rounded";
+            container.appendChild(passwordInput);
+
+            const loginButton = document.createElement("button");
+            loginButton.className = "btn w-full mb-2";
+            loginButton.innerText = "Login";
+            loginButton.onclick = () => {
+                const email = emailInput.value;
+                const password = passwordInput.value;
                 auth.signInWithEmailAndPassword(email, password)
-                    .then(userCredential => {
-                        onLogin(userCredential.user);
-                    })
-                    .catch(error => {
-                        alert("Login failed: " + error.message);
-                    });
-            }
+                    .then(userCredential => onLogin(userCredential.user))
+                    .catch(error => alert("Login failed: " + error.message));
+            };
+            container.appendChild(loginButton);
 
-            function handleRegister() {
+            const registerButton = document.createElement("button");
+            registerButton.className = "btn w-full";
+            registerButton.innerText = "Register";
+            registerButton.onclick = () => {
+                const email = emailInput.value;
+                const password = passwordInput.value;
                 auth.createUserWithEmailAndPassword(email, password)
-                    .then(userCredential => {
-                        onLogin(userCredential.user);
-                    })
-                    .catch(error => {
-                        alert("Registration failed: " + error.message);
-                    });
-            }
+                    .then(userCredential => onLogin(userCredential.user))
+                    .catch(error => alert("Registration failed: " + error.message));
+            };
+            container.appendChild(registerButton);
 
             return container;
         }
 
-        function TimeTrackingCalendar() {
-            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        function TimeTrackingCalendar(user) {
+            const container = document.createElement("div");
+            container.className = "calendar-container max-w-4xl mx-auto p-4";
 
-            function renderCalendar() {
-                const days = [];
-                for (let day = 1; day <= daysInMonth; day++) {
-                    days.push(
-                        createElement("div", { className: "calendar-day p-4 border rounded hover:bg-orange-100" },
-                            createElement("p", { className: "font-bold" }, day.toString())
-                        )
-                    );
-                }
-                return days;
+            const title = document.createElement("h1");
+            title.className = "text-2xl font-bold text-center mb-4";
+            title.innerText = "Time Tracking Calendar";
+            container.appendChild(title);
+
+            const calendarGrid = document.createElement("div");
+            calendarGrid.className = "grid grid-cols-7 gap-4";
+
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+            const currentDate = new Date();
+            const currentDay = currentDate.getDate();
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayCell = document.createElement("div");
+                dayCell.className = `calendar-day p-4 border rounded hover:bg-orange-100 cursor-pointer ${day === currentDay ? 'bg-orange-200 border-orange-500' : ''}`;
+                dayCell.innerText = day;
+
+                dayCell.onclick = () => {
+                    const hoursWorked = prompt(`Enter hours worked for ${day}`);
+                    if (hoursWorked !== null && !isNaN(hoursWorked)) {
+                        db.collection("timeEntries").doc(user.uid).set({
+                            [`${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-${day}`]: { hours: hoursWorked }
+                        }, { merge: true });
+                        alert("Hours submitted successfully!");
+                    } else {
+                        alert("Invalid input. Please enter a number.");
+                    }
+                };
+
+                calendarGrid.appendChild(dayCell);
             }
 
-            const container = createElement("div", { className: "calendar-container max-w-4xl mx-auto p-4" },
-                createElement("h1", { className: "text-2xl font-bold text-center mb-4" }, "Time Tracking Calendar"),
-                createElement("div", { className: "grid grid-cols-7 gap-4" }, ...renderCalendar())
-            );
-
+            container.appendChild(calendarGrid);
             return container;
         }
 
@@ -151,7 +145,7 @@ featured_image: /images/demo/home.jpg
             function render() {
                 root.innerHTML = "";
                 if (user) {
-                    root.appendChild(TimeTrackingCalendar());
+                    root.appendChild(TimeTrackingCalendar(user));
                 } else {
                     root.appendChild(LoginPage(handleLogin));
                 }
