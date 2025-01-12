@@ -5,68 +5,61 @@ description: Please submit your hours
 featured_image: /images/demo/home.jpg
 ---
 
-<section class="hero">
-
-	<div class="hero__image" style="background-image: url({{ page.featured_image | relative_url }})">
-		<div class="hero__overlay"></div>
-	</div>
-
-	<div class="wrap">
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Working Hours Tracker</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="/css/style.css">
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore.js"></script>
 </head>
 <body>
   <div class="wrap">
-    <h1>Working Hours Tracker</h1>
+    <h1 class="title">Working Hours Tracker</h1>
 
-    <!-- Login and Register Buttons -->
-    <div id="auth-buttons">
-      <button onclick="showLoginForm()">Login</button>
-      <button onclick="showRegisterForm()">Register</button>
+    <!-- Auth Buttons -->
+    <div id="auth-buttons" class="button-group">
+      <button class="btn btn-primary" onclick="showLoginForm()">Login</button>
+      <button class="btn btn-secondary" onclick="showRegisterForm()">Register</button>
     </div>
 
     <!-- Login Form -->
-    <div id="login-form" style="display:none;">
-      <h2>Login</h2>
-      <input type="email" id="login-email" placeholder="Email" required>
-      <input type="password" id="login-password" placeholder="Password" required>
-      <button onclick="loginUser()">Login</button>
+    <div id="login-form" class="form" style="display:none;">
+      <h2 class="form-title">Login</h2>
+      <input type="email" id="login-email" class="input-field" placeholder="Email" required>
+      <input type="password" id="login-password" class="input-field" placeholder="Password" required>
+      <button class="btn btn-primary" onclick="loginUser()">Login</button>
     </div>
 
     <!-- Register Form -->
-    <div id="register-form" style="display:none;">
-      <h2>Register</h2>
-      <input type="email" id="register-email" placeholder="Email" required>
-      <input type="password" id="register-password" placeholder="Password" required>
-      <button onclick="registerUser()">Register</button>
+    <div id="register-form" class="form" style="display:none;">
+      <h2 class="form-title">Register</h2>
+      <input type="email" id="register-email" class="input-field" placeholder="Email" required>
+      <input type="password" id="register-password" class="input-field" placeholder="Password" required>
+      <button class="btn btn-secondary" onclick="registerUser()">Register</button>
     </div>
 
     <!-- Working Hours Submission Form -->
-    <div id="hours-form" style="display:none;">
-      <h2>Submit Working Hours</h2>
-      <input type="date" id="date" required>
-      <input type="number" id="hours-worked" placeholder="Hours Worked" required>
-      <button onclick="submitWorkingHours()">Submit Hours</button>
+    <div id="hours-form" class="form" style="display:none;">
+      <h2 class="form-title">Submit Working Hours</h2>
+      <input type="date" id="date" class="input-field" required>
+      <input type="number" id="hours-worked" class="input-field" placeholder="Hours Worked" required>
+      <button class="btn btn-primary" onclick="submitWorkingHours()">Submit Hours</button>
     </div>
   </div>
 
   <script>
     // Your Firebase Configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-      authDomain: "autonomy-heroes.firebaseapp.com",
-      projectId: "autonomy-heroes",
-      storageBucket: "autonomy-heroes.firebasestorage.app",
-      messagingSenderId: "266526530869",
-      appId: "1:266526530869:web:ea95143735be497ca8007c"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
     // Initialize Firebase
@@ -136,35 +129,3 @@ featured_image: /images/demo/home.jpg
   </script>
 </body>
 </html>
-
-</div>
-
-</section>
-
-<section class="listing">
-
-	<div class="wrap">
-
-		{% for project in site.projects reversed %}
-
-		<article class="post">
-
-			<div class="post__image-wrap">
-				<div class="post__image" style="background-image: url({{ project.featured_image | relative_url }})"></div>
-			</div>
-
-			<div class="post__content-wrap">
-				<div class="post__content">
-					<h2 class="post__title"><a href="{{ project.url | relative_url }}">{{ project.title }}</a></h2>
-					<p class="post__subtitle">{{ project.subtitle }}</p>
-					<p class="post__description">{{ project.description }}</p>
-				</div>
-			</div>
-
-		</article>
-
-		{% endfor %}
-
-	</div>
-
-</section>
