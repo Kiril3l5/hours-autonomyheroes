@@ -33,12 +33,12 @@ featured_image: /images/demo/home.jpg
     <script type="text/javascript">
         // Firebase configuration
         const firebaseConfig = {
-      apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-      authDomain: "autonomy-heroes.firebaseapp.com",
-      projectId: "autonomy-heroes",
-      storageBucket: "autonomy-heroes.firebasestorage.app",
-      messagingSenderId: "266526530869",
-      appId: "1:266526530869:web:ea95143735be497ca8007c"
+            apiKey: "AIzaSyA9-Qvn35f6qTl9FgU23R9sPsm9BFW-Yhw",
+            authDomain: "autonomy-heroes.firebaseapp.com",
+            projectId: "autonomy-heroes",
+            storageBucket: "autonomy-heroes.appspot.com",
+            messagingSenderId: "266526530869",
+            appId: "1:266526530869:web:ea95143735be497ca8007c"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -117,12 +117,7 @@ featured_image: /images/demo/home.jpg
         }
 
         function TimeTrackingCalendar() {
-            const container = createElement("div", { className: "calendar-container max-w-4xl mx-auto p-4" },
-                createElement("h1", { className: "text-2xl font-bold text-center mb-4" }, "Time Tracking Calendar"),
-                createElement("div", { className: "grid grid-cols-7 gap-4" }, ...renderCalendar())
-            );
-
-            const daysInMonth = new Date().getDate();
+            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
 
             function renderCalendar() {
                 const days = [];
@@ -135,6 +130,11 @@ featured_image: /images/demo/home.jpg
                 }
                 return days;
             }
+
+            const container = createElement("div", { className: "calendar-container max-w-4xl mx-auto p-4" },
+                createElement("h1", { className: "text-2xl font-bold text-center mb-4" }, "Time Tracking Calendar"),
+                createElement("div", { className: "grid grid-cols-7 gap-4" }, ...renderCalendar())
+            );
 
             return container;
         }
@@ -164,4 +164,3 @@ featured_image: /images/demo/home.jpg
     </script>
 </body>
 </html>
-
