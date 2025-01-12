@@ -18,31 +18,48 @@ featured_image: /images/demo/home.jpg
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Working Hours Tracker</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore.js"></script>
 </head>
 <body>
-  <h1>Working Hours Tracker</h1>
+  <div class="wrap">
+    <h1>Working Hours Tracker</h1>
 
-  <!-- Login Form -->
-  <div id="login-form">
-    <h2>Login</h2>
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="password" id="password" placeholder="Password" required>
-    <button onclick="login()">Login</button>
-  </div>
+    <!-- Login and Register Buttons -->
+    <div id="auth-buttons">
+      <button onclick="showLoginForm()">Login</button>
+      <button onclick="showRegisterForm()">Register</button>
+    </div>
 
-  <!-- Working Hours Form -->
-  <div id="working-hours-form" style="display:none;">
-    <h2>Submit Working Hours</h2>
-    <input type="date" id="date" required>
-    <input type="number" id="hours" placeholder="Hours Worked" required>
-    <button onclick="submitWorkingHours()">Submit</button>
+    <!-- Login Form -->
+    <div id="login-form" style="display:none;">
+      <h2>Login</h2>
+      <input type="email" id="login-email" placeholder="Email" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button onclick="loginUser()">Login</button>
+    </div>
+
+    <!-- Register Form -->
+    <div id="register-form" style="display:none;">
+      <h2>Register</h2>
+      <input type="email" id="register-email" placeholder="Email" required>
+      <input type="password" id="register-password" placeholder="Password" required>
+      <button onclick="registerUser()">Register</button>
+    </div>
+
+    <!-- Working Hours Submission Form -->
+    <div id="hours-form" style="display:none;">
+      <h2>Submit Working Hours</h2>
+      <input type="date" id="date" required>
+      <input type="number" id="hours-worked" placeholder="Hours Worked" required>
+      <button onclick="submitWorkingHours()">Submit Hours</button>
+    </div>
   </div>
 
   <script>
-    // Your Firebase Config
+    // Your Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
       authDomain: "autonomy-heroes.firebaseapp.com",
@@ -53,45 +70,74 @@ featured_image: /images/demo/home.jpg
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
+    const app = firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Login Function
-    function login() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
+    // Show Login Form
+    function showLoginForm() {
+      document.getElementById('auth-buttons').style.display = 'none';
+      document.getElementById('login-form').style.display = 'block';
+    }
+
+    // Show Register Form
+    function showRegisterForm() {
+      document.getElementById('auth-buttons').style.display = 'none';
+      document.getElementById('register-form').style.display = 'block';
+    }
+
+    // Register User
+    function registerUser() {
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then(userCredential => {
+          alert('Registration successful!');
+          document.getElementById('register-form').style.display = 'none';
+          document.getElementById('hours-form').style.display = 'block';
+        })
+        .catch(error => alert(error.message));
+    }
+
+    // Login User
+    function loginUser() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
 
       auth.signInWithEmailAndPassword(email, password)
-        .then(() => {
+        .then(userCredential => {
+          alert('Login successful!');
           document.getElementById('login-form').style.display = 'none';
-          document.getElementById('working-hours-form').style.display = 'block';
+          document.getElementById('hours-form').style.display = 'block';
         })
-        .catch(error => console.error(error.message));
+        .catch(error => alert(error.message));
     }
 
     // Submit Working Hours
     function submitWorkingHours() {
       const date = document.getElementById('date').value;
-      const hours = document.getElementById('hours').value;
+      const hoursWorked = document.getElementById('hours-worked').value;
       const user = auth.currentUser;
 
       if (user) {
         db.collection('workingHours').add({
           userId: user.uid,
           date: date,
-          hoursWorked: parseFloat(hours),
+          hoursWorked: parseFloat(hoursWorked),
           status: 'pending'
         })
-        .then(() => alert('Working hours submitted!'))
-        .catch(error => console.error(error.message));
+        .then(() => alert('Working hours submitted successfully!'))
+        .catch(error => alert(error.message));
+      } else {
+        alert('You need to log in to submit hours.');
       }
     }
   </script>
 </body>
 </html>
 
-	</div>
+</div>
 
 </section>
 
