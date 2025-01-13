@@ -37,22 +37,26 @@ function formatDate(date) {
     });
 }
 
-function getWeekDates(date) {
-    const monday = new Date(date);
-    monday.setDate(date.getDate() - date.getDay() + 1);
-    
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-        const day = new Date(monday);
-        day.setDate(monday.getDate() + i);
-        dates.push(day);
-    }
-    return dates;
+function calculateWeekTotal(timeEntries, weekDates) {
+    return weekDates.reduce((total, date) => {
+        const entry = timeEntries[date.toISOString()];
+        // Only add hours if there's an entry, it's not time off, and hours is a valid number
+        return total + (entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0);
+    }, 0);
 }
 
-function calculateWeekTotal(entries, weekDates) {
-    return weekDates.reduce((total, date) => {
-        const entry = entries[date.toISOString()];
-        return total + (entry && !entry.isTimeOff ? (entry.hours || 0) : 0);
-    }, 0);
+function getWeekDates(date) {
+    const mondayOfWeek = new Date(date);
+    // Adjust to Monday (1) from Sunday (0)
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    mondayOfWeek.setDate(diff);
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(mondayOfWeek);
+        currentDate.setDate(mondayOfWeek.getDate() + i);
+        weekDates.push(currentDate);
+    }
+    return weekDates;
 }

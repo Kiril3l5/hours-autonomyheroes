@@ -62,14 +62,21 @@ class TimeTrackingCalendar {
     updateWeekSummary() {
         const weekDates = getWeekDates(new Date());
         const weekNumber = getWeekNumber(new Date());
-        let totalHours = 0;
+        
+        // Calculate total hours directly from entries
+        let totalHours = weekDates.reduce((total, date) => {
+            const entry = this.timeEntries[date.toISOString()];
+            return total + (entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0);
+        }, 0);
+
+        console.log('Current entries:', this.timeEntries); // Debug log
+        console.log('Total hours calculated:', totalHours); // Debug log
         
         let summaryHtml = '<div class="week-details">';
         
         weekDates.forEach(date => {
-            const entry = this.timeEntries[date.toISOString()];
-            const dayHours = entry && !entry.isTimeOff ? entry.hours : 0;
-            totalHours += dayHours;
+            const dateKey = date.toISOString();
+            const entry = this.timeEntries[dateKey];
             
             const isToday = date.toDateString() === new Date().toDateString();
             const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
@@ -78,6 +85,7 @@ class TimeTrackingCalendar {
             let statusStyle = 'color: #6C7A89;';
             
             if (entry) {
+                console.log('Entry for', date.toLocaleDateString(), ':', entry); // Debug log
                 if (entry.isTimeOff) {
                     statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
                     statusStyle = 'color: #dc2626;';

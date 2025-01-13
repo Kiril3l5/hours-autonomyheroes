@@ -61,6 +61,7 @@ class TimeEntryModal {
 
     // If hours is 0, simply clear the entry without confirmation
     if (hours === 0) {
+        console.log('Clearing entry'); // Debug log
         this.onSave(this.selectedDate, null);
         this.close();
         return;
@@ -80,7 +81,7 @@ class TimeEntryModal {
 
     // Create entry object
     const entry = {
-        hours: isTimeOff ? 0 : hours,
+        hours: isTimeOff ? 0 : Number(hours), // Ensure hours is a number
         isTimeOff,
         managerApproved: isTimeOff && this.managerApprovedCheck.checked,
         overtimeApproved: hours > 8 && this.overtimeApprovedCheck.checked,
@@ -88,8 +89,10 @@ class TimeEntryModal {
         timestamp: new Date().toISOString()
     };
 
+    console.log('Saving entry:', entry); // Debug log
+    
     // Call save callback
     this.onSave(this.selectedDate, entry);
     this.close();
-	}
+}
 }
