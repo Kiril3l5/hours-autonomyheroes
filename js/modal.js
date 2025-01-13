@@ -91,4 +91,4 @@ class TimeEntryModal {
     // Call save callback
     this.onSave(this.selectedDate, entry);
     this.close();
-}
+	}

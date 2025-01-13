@@ -195,7 +195,6 @@ class TimeTrackingCalendar {
                 'Complete 40h Before Submitting';
         }
     }
-}
 
     previousMonth() {
         this.currentDate.setMonth(this.currentDate.getMonth() - 1);
