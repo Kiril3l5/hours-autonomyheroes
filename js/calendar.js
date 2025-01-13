@@ -72,40 +72,8 @@ class TimeTrackingCalendar {
         let startDay = firstDay === 0 ? 6 : firstDay - 1;
 
         // Add empty cells
-        for (let i = 0; i < startDay; i++) {
-            const emptyDay = document.createElement('div');
-            emptyDay.className = 'day empty';
-            this.calendarEl.appendChild(emptyDay);
-        }
-
-        // Add days
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            const isCurrentWeek = checkIfCurrentWeek(date);
-            const isPastWeek = checkIfPastWeek(date);
-            const weekNumber = getWeekNumber(date);
-            
-            const dayEl = document.createElement('div');
-            dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
-            
-            const dayContent = document.createElement('div');
-            dayContent.className = 'day-content';
-            
-            // Add day number
-            const dayNumber = document.createElement('div');
-            dayNumber.className = 'day-number';
-            dayNumber.textContent = day;
-            dayEl.appendChild(dayNumber);
-
-            // Add entry info if exists
-            const entry = this.timeEntries[date.toISOString()];
-            if (entry) {
-                const entryDisplay = document.createElement('div');
-                if (entry.isTimeOff) {
-                    entryDisplay.className = 'hours-display time-off';
-                    entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
-                } else {
-                    entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
+        for (let i = 0; i < startDay; i++) { const emptyDay=document.createElement('div' ); emptyDay.className='day empty' ; this.calendarEl.appendChild(emptyDay); } Add days for (let day=1; day
+<= daysInMonth; day++) { const date=new Date(year, month, day); const isCurrentWeek=checkIfCurrentWeek(date); const isPastWeek=checkIfPastWeek(date); const weekNumber=getWeekNumber(date); const dayEl=document.createElement('div' ); dayEl.className=`day ${isCurrentWeek ?'current-week' :'' } ${isPastWeek ?'past-week' :'' }`; const dayContent=document.createElement('div' ); dayContent.className='day-content' ; Add day number const dayNumber=document.createElement('div' ); dayNumber.className='day-number' ; dayNumber.textContent=day; dayEl.appendChild(dayNumber); Add entry info if exists const entry=this.timeEntries[date.toISOString()]; if (entry) { const entryDisplay=document.createElement('div' ); if (entry.isTimeOff) { entryDisplay.className='hours-display time-off' ; entryDisplay.innerHTML=`Time Off${entry.managerApproved ?'<div class="approval-check">✓ Approved</div>' :'' }`; } else { entryDisplay.className=`hours-display ${entry.hours> 8 ? 'hours-overtime' : 'hours-regular'}`;
                     entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
                 }
                 dayContent.appendChild(entryDisplay);
@@ -133,7 +101,7 @@ class TimeTrackingCalendar {
             <div class="week-total font-bold text-lg mb-4">
                 Week ${weekNumber} Total: ${totalHours}h
             </div>
-            <div class="week-details grid gap-2">
+	<div class="week-details grid gap-2">
         `;
         
         weekDates.forEach(date => {
@@ -156,9 +124,9 @@ class TimeTrackingCalendar {
 
             summaryHtml += `
                 <div class="day-summary flex justify-between ${dayClass}">
-                    <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
-                    <span class="${statusClass}">${entryText}</span>
-                </div>
+			<span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+			<span class="${statusClass}">${entryText}</span>
+		</div>
             `;
         });
 
@@ -171,9 +139,8 @@ class TimeTrackingCalendar {
                     Week has been submitted and locked
                 </div>
             `;
-        } else if (totalHours < 40) {
-            summaryHtml += `
-                <div class="mt-4 text-center text-orange-600">
+        } else if (totalHours < 40) { summaryHtml +=`
+	<div class="mt-4 text-center text-orange-600">
                     Week is incomplete (${40 - totalHours}h remaining to reach 40h)
                 </div>
             `;
