@@ -1,6 +1,11 @@
 // modal.js
 class TimeEntryModal {
     constructor(onSave) {
+		const modal = document.getElementById('timeEntryModal');
+        if (!modal) {
+            console.error('Modal element not found');
+            return;
+        }
         this.modal = document.getElementById('timeEntryModal');
         this.dateDisplay = document.getElementById('modalDate');
         this.timeOffCheck = document.getElementById('timeOffCheck');
