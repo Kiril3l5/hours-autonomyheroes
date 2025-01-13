@@ -45,7 +45,10 @@ class TimeTrackingCalendar {
 
         // Save to local storage
         localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
+        
+        // Force update both calendar and summary
         this.render();
+        this.updateWeekSummary();
     }
 
     render() {
@@ -123,27 +126,76 @@ class TimeTrackingCalendar {
 
     updateWeekSummary() {
         const weekDates = getWeekDates(new Date());
-        const totalHours = calculateWeekTotal(this.timeEntries, weekDates);
         const weekNumber = getWeekNumber(new Date());
+        const totalHours = calculateWeekTotal(this.timeEntries, weekDates);
         
-        let summaryHtml = `<div class="week-total">Total Hours: ${totalHours}</div>`;
+        let summaryHtml = `
+            <div class="week-total font-bold text-lg mb-4">
+                Week ${weekNumber} Total: ${totalHours}h
+            </div>
+            <div class="week-details grid gap-2">
+        `;
         
         weekDates.forEach(date => {
             const entry = this.timeEntries[date.toISOString()];
-            summaryHtml += `<div class="day-summary">
-                ${date.toLocaleDateString('en-US', { weekday: 'short' })}: 
-                ${entry ? (entry.isTimeOff ? 'Time Off' : `${entry.hours}h`) : 'No Entry'}
-            </div>`;
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dayClass = isToday ? 'font-bold text-[#ff8d00]' : '';
+            
+            let entryText = 'No Entry';
+            let statusClass = 'text-gray-500';
+            
+            if (entry) {
+                if (entry.isTimeOff) {
+                    entryText = entry.managerApproved ? 'Time Off (Approved)' : 'Time Off';
+                    statusClass = 'text-red-600';
+                } else {
+                    entryText = `${entry.hours}h`;
+                    statusClass = entry.hours > 8 ? 'text-orange-600' : 'text-green-600';
+                }
+            }
+
+            summaryHtml += `
+                <div class="day-summary flex justify-between ${dayClass}">
+                    <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+                    <span class="${statusClass}">${entryText}</span>
+                </div>
+            `;
         });
+
+        summaryHtml += '</div>';
+
+        // Add warning if week is incomplete
+        if (this.submittedWeeks[weekNumber]) {
+            summaryHtml += `
+                <div class="mt-4 text-center text-gray-500">
+                    Week has been submitted and locked
+                </div>
+            `;
+        } else if (totalHours < 40) {
+            summaryHtml += `
+                <div class="mt-4 text-center text-orange-600">
+                    Week is incomplete (${40 - totalHours}h remaining to reach 40h)
+                </div>
+            `;
+        }
 
         this.summaryEl.innerHTML = summaryHtml;
         
         // Update submit button state
         const submitBtn = document.getElementById('submitWeek');
-        submitBtn.disabled = this.submittedWeeks[weekNumber];
-        submitBtn.textContent = this.submittedWeeks[weekNumber] ? 
-            'Week Submitted' : 'Submit Week for Approval';
+        if (this.submittedWeeks[weekNumber]) {
+            submitBtn.disabled = true;
+            submitBtn.className = 'btn opacity-50 cursor-not-allowed';
+            submitBtn.textContent = 'Week Submitted';
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.className = 'btn';
+            submitBtn.textContent = totalHours >= 40 ? 
+                'Submit Week for Approval' : 
+                'Complete 40h Before Submitting';
+        }
     }
+}
 
     previousMonth() {
         this.currentDate.setMonth(this.currentDate.getMonth() - 1);
