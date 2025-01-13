@@ -17,8 +17,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
     <!-- Styles -->
-    <link rel="stylesheet" href="/css/styles.css">
-    <link rel="stylesheet" href="/css/auth.css">
+    <link rel="stylesheet" href="css/styles.css">
+	<link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
     <!-- Auth Container -->
@@ -116,10 +116,58 @@
         firebase.initializeApp(firebaseConfig);
     </script>
 
+<!-- Time Entry Modal -->
+    <div id="timeEntryModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalDate"></h2>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="timeOffCheck">
+                    Time off request
+                </label>
+                
+                <div id="timeOffApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="managerApprovedCheck">
+                        Time off was requested in advance and approved by manager
+                    </label>
+                </div>
+            </div>
+
+            <div id="hoursSection">
+                <div class="form-group">
+                    <label>Hours Worked</label>
+                    <input type="number" id="hoursInput" value="8" min="0" max="24">
+                </div>
+
+                <div id="overtimeApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="overtimeApprovedCheck">
+                        Overtime was approved by manager
+                    </label>
+                </div>
+
+                <div id="shortDayApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="shortDayApprovedCheck">
+                        Manager is aware of less than 8h work day
+                    </label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="cancelEntry" class="btn btn-secondary">Cancel</button>
+                <button id="saveEntry" class="btn">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Application Scripts -->
-    <script src="/js/utils.js"></script>
-    <script src="/js/modal.js"></script>
-    <script src="/js/calendar.js"></script>
-    <script src="/js/auth.js"></script>
+	
+    <script src="js/utils.js"></script>
+	<script src="js/modal.js"></script>
+	<script src="js/calendar.js"></script>
+	<script src="js/auth.js"></script>
 </body>
 </html>
