@@ -15,99 +15,93 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
-    <div class="container">
-        <div class="calendar-card">
-            <h1 class="title">Hours Portal</h1>
-            
-            <div class="month-nav">
-                <button class="nav-btn" id="prevMonth">←</button>
-                <span class="month-title" id="currentMonth"></span>
-                <button class="nav-btn" id="nextMonth">→</button>
-            </div>
-
-            <div class="calendar-grid" id="calendar">
-                <div class="weekday">Mon</div>
-                <div class="weekday">Tue</div>
-                <div class="weekday">Wed</div>
-                <div class="weekday">Thu</div>
-                <div class="weekday">Fri</div>
-                <div class="weekday">Sat</div>
-                <div class="weekday">Sun</div>
-            </div>
-
-            <div class="submit-section">
-                <h3>Current Week Summary</h3>
-                <div id="weekSummary"></div>
-                <button class="btn" id="submitWeek">Submit Week for Approval</button>
-            </div>
+    <!-- Auth Container -->
+    <div id="authContainer" class="auth-container active">
+        <h1 class="title">Hours Portal</h1>
+        
+        <div class="auth-tabs">
+            <button id="loginTab" class="auth-tab active">Login</button>
+            <button id="registerTab" class="auth-tab">Register</button>
         </div>
-    </div>
 
-    <!-- Time Entry Modal -->
-    <div class="modal" id="timeEntryModal">
-        <div class="modal-content">
-            <h2 id="modalDate"></h2>
-            
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form active">
             <div class="form-group">
-                <label>
-                    <input type="checkbox" id="timeOffCheck">
-                    Time off request
-                </label>
+                <label for="loginEmail">Work Email</label>
+                <input type="email" id="loginEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn-auth">Login</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="auth-form">
+            <div class="form-group">
+                <label for="regFirstName">First Name</label>
+                <input type="text" id="regFirstName" required>
+            </div>
+            <div class="form-group">
+                <label for="regLastName">Last Name</label>
+                <input type="text" id="regLastName" required>
+            </div>
+            <div class="form-group">
+                <label for="regEmail">Work Email</label>
+                <input type="email" id="regEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" required>
+            </div>
+            <button type="submit" class="btn-auth">Register</button>
+        </form>
+    </div>
+
+    <!-- Calendar Container -->
+    <div id="calendarContainer" class="calendar-container">
+        <div class="user-info">
+            Logged in as <span id="userEmail"></span>
+            <button id="logoutBtn" class="btn-logout">Logout</button>
+        </div>
+        
+        <div class="container">
+            <div class="calendar-card">
+                <h1 class="title">Hours Portal</h1>
                 
-                <div id="timeOffApproval" class="checkbox-group">
-                    <label>
-                        <input type="checkbox" id="managerApprovedCheck">
-                        Time off was requested in advance and approved by manager
-                    </label>
-                </div>
-            </div>
-
-            <div id="hoursSection">
-                <div class="form-group">
-                    <label>Hours Worked</label>
-                    <input type="number" id="hoursInput" value="8" min="0" max="24">
+                <div class="month-nav">
+                    <button class="nav-btn" id="prevMonth">←</button>
+                    <span class="month-title" id="currentMonth"></span>
+                    <button class="nav-btn" id="nextMonth">→</button>
                 </div>
 
-                <div id="overtimeApproval" class="checkbox-group">
-                    <label>
-                        <input type="checkbox" id="overtimeApprovedCheck">
-                        Overtime was approved by manager
-                    </label>
+                <div class="calendar-grid" id="calendar">
+                    <div class="weekday">Mon</div>
+                    <div class="weekday">Tue</div>
+                    <div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div>
+                    <div class="weekday">Fri</div>
+                    <div class="weekday">Sat</div>
+                    <div class="weekday">Sun</div>
                 </div>
 
-                <div id="shortDayApproval" class="checkbox-group">
-                    <label>
-                        <input type="checkbox" id="shortDayApprovedCheck">
-                        Manager is aware of less than 8h work day
-                    </label>
+                <div class="submit-section">
+                    <h3>Current Week Summary</h3>
+                    <div id="weekSummary"></div>
+                    <button id="submitWeek" class="btn">Submit Week for Approval</button>
                 </div>
-            </div>
-
-            <div class="actions">
-                <button class="btn btn-secondary" id="cancelEntry">Cancel</button>
-                <button class="btn" id="saveEntry">Save</button>
             </div>
         </div>
     </div>
-
-    <!-- Firebase Config -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-            authDomain: "autonomy-heroes.firebaseapp.com",
-            projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.firebasestorage.app",
-            messagingSenderId: "266526530869",
-            appId: "1:266526530869:web:ea95143735be497ca8007c"
-        };
-        firebase.initializeApp(firebaseConfig);
-    </script>
 
     <!-- Application Scripts -->
     <script src="js/utils.js"></script>
     <script src="js/modal.js"></script>
     <script src="js/calendar.js"></script>
+    <script src="js/auth.js"></script>
 </body>
 </html>

@@ -244,3 +244,111 @@ input[type="number"] {
     border-radius: 4px;
     font-size: 16px;
 }
+/* auth.css */
+.auth-container {
+    display: none;
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 24px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.auth-container.active {
+    display: block;
+}
+
+.calendar-container {
+    display: none;
+}
+
+.calendar-container.active {
+    display: block;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 24px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 12px;
+    text-align: center;
+    background: #e2e8f0;
+    border: none;
+    cursor: pointer;
+    font-family: 'Roboto Condensed', sans-serif;
+    font-weight: 600;
+}
+
+.auth-tab.active {
+    background: #ff8d00;
+    color: white;
+}
+
+.auth-form {
+    display: none;
+}
+
+.auth-form.active {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.btn-auth {
+    width: 100%;
+    padding: 12px;
+    background: #ff8d00;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-auth:hover {
+    background: #e67e00;
+}
+
+.user-info {
+    text-align: right;
+    margin-bottom: 16px;
+    color: #6C7A89;
+}
+
+.btn-logout {
+    background: none;
+    border: none;
+    color: #ff8d00;
+    font-family: inherit;
+    cursor: pointer;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.btn-logout:hover {
+    text-decoration: underline;
+}
