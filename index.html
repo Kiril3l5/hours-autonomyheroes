@@ -1,284 +1,113 @@
----
-layout: default
-title: Admin panel
-description: Approve hours
-featured_image: /images/demo/home.jpg
----
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autonomy Heroes – Submit Hours</title>
+    <title>Hours Portal - Autonomy Heroes</title>
+    
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-    <!-- React and ReactDOM from CDN -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-
-    <!-- Firebase from CDN -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <!-- Tailwind CSS -->
-    <link href="https://unpkg.com/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            --background-color: #ffffff;
-            --background-alt-color: #f4f5f6;
-            --text-dark-color: #2A2F36;
-            --text-medium-color: #6C7A89;
-            --accent-color: #ff8d00;
-            --border-color: #ff8d00;
-            --error-color: #D64541;
-        }
-
-        body {
-            font-family: "Roboto Condensed", sans-serif;
-            background-color: var(--background-alt-color);
-            color: var(--text-dark-color);
-            letter-spacing: 0;
-            line-height: 1.6;
-        }
-
-        .calendar-cell {
-            min-height: 100px;
-            border: 1px solid #e2e8f0;
-            padding: 8px;
-            position: relative;
-            background-color: var(--background-color);
-            cursor: pointer;
-        }
-
-        .calendar-cell:hover {
-            background-color: var(--background-alt-color);
-        }
-
-        .current-week {
-            border: 2px solid var(--accent-color);
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: var(--background-color);
-            padding: 2rem;
-            border-radius: 0.5rem;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .hour-entry {
-            font-size: 14px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            margin-top: 8px;
-        }
-
-        .hours-regular {
-            background-color: #e6ffe6;
-            color: #006600;
-        }
-
-        .hours-overtime {
-            background-color: #fff3e6;
-            color: #cc5500;
-        }
-
-        .time-off {
-            background-color: #ffe6e6;
-            color: #cc0000;
-        }
-
-        .submit-section {
-            background-color: var(--background-color);
-            border: 2px solid var(--accent-color);
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .submit-button {
-            background-color: var(--accent-color);
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .submit-button:hover {
-            background-color: #ff7c00;
-        }
-    </style>
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div id="root"></div>
+    <div class="container">
+        <div class="calendar-card">
+            <h1 class="title">Hours Portal</h1>
+            
+            <div class="month-nav">
+                <button class="nav-btn" id="prevMonth">←</button>
+                <span class="month-title" id="currentMonth"></span>
+                <button class="nav-btn" id="nextMonth">→</button>
+            </div>
 
-    <script type="text/javascript">
-        // Firebase configuration
+            <div class="calendar-grid" id="calendar">
+                <div class="weekday">Mon</div>
+                <div class="weekday">Tue</div>
+                <div class="weekday">Wed</div>
+                <div class="weekday">Thu</div>
+                <div class="weekday">Fri</div>
+                <div class="weekday">Sat</div>
+                <div class="weekday">Sun</div>
+            </div>
+
+            <div class="submit-section">
+                <h3>Current Week Summary</h3>
+                <div id="weekSummary"></div>
+                <button class="btn" id="submitWeek">Submit Week for Approval</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Entry Modal -->
+    <div class="modal" id="timeEntryModal">
+        <div class="modal-content">
+            <h2 id="modalDate"></h2>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="timeOffCheck">
+                    Time off request
+                </label>
+                
+                <div id="timeOffApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="managerApprovedCheck">
+                        Time off was requested in advance and approved by manager
+                    </label>
+                </div>
+            </div>
+
+            <div id="hoursSection">
+                <div class="form-group">
+                    <label>Hours Worked</label>
+                    <input type="number" id="hoursInput" value="8" min="0" max="24">
+                </div>
+
+                <div id="overtimeApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="overtimeApprovedCheck">
+                        Overtime was approved by manager
+                    </label>
+                </div>
+
+                <div id="shortDayApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="shortDayApprovedCheck">
+                        Manager is aware of less than 8h work day
+                    </label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-secondary" id="cancelEntry">Cancel</button>
+                <button class="btn" id="saveEntry">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Config -->
+    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
             authDomain: "autonomy-heroes.firebaseapp.com",
             projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.appspot.com",
+            storageBucket: "autonomy-heroes.firebasestorage.app",
             messagingSenderId: "266526530869",
             appId: "1:266526530869:web:ea95143735be497ca8007c"
         };
-
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        function LoginPage(onLogin) {
-            const container = document.createElement("div");
-            container.className = "max-w-md mx-auto mt-20 p-8 bg-white shadow-md rounded";
-
-            const title = document.createElement("h1");
-            title.className = "text-2xl font-bold mb-4";
-            title.innerText = "Login or Register";
-            container.appendChild(title);
-
-            const emailInput = document.createElement("input");
-            emailInput.type = "email";
-            emailInput.placeholder = "Email";
-            emailInput.className = "w-full p-2 mb-4 border rounded";
-            container.appendChild(emailInput);
-
-            const passwordInput = document.createElement("input");
-            passwordInput.type = "password";
-            passwordInput.placeholder = "Password";
-            passwordInput.className = "w-full p-2 mb-4 border rounded";
-            container.appendChild(passwordInput);
-
-            const loginButton = document.createElement("button");
-            loginButton.className = "btn w-full mb-2";
-            loginButton.innerText = "Login";
-            loginButton.onclick = () => {
-                const email = emailInput.value;
-                const password = passwordInput.value;
-                auth.signInWithEmailAndPassword(email, password)
-                    .then(userCredential => onLogin(userCredential.user))
-                    .catch(error => alert("Login failed: " + error.message));
-            };
-            container.appendChild(loginButton);
-
-            const registerButton = document.createElement("button");
-            registerButton.className = "btn w-full";
-            registerButton.innerText = "Register";
-            registerButton.onclick = () => {
-                const email = emailInput.value;
-                const password = passwordInput.value;
-                auth.createUserWithEmailAndPassword(email, password)
-                    .then(userCredential => onLogin(userCredential.user))
-                    .catch(error => alert("Registration failed: " + error.message));
-            };
-            container.appendChild(registerButton);
-
-            return container;
-        }
-
-        function TimeEntryModal(day, saveHours) {
-            const modal = document.createElement("div");
-            modal.className = "modal";
-            modal.innerHTML = `
-                <div class="modal-content">
-                    <h2>Enter Hours for Day ${day}</h2>
-                    <label>Hours Worked:</label>
-                    <input type="number" id="hours-input" class="w-full p-2 mb-4 border rounded" />
-                    <label>
-                        <input type="checkbox" id="overtime-checkbox" />
-                        Overtime Approval Needed
-                    </label>
-                    <label>
-                        <input type="checkbox" id="timeoff-checkbox" />
-                        Time Off Request
-                    </label>
-                    <button id="save-button" class="submit-button">Save</button>
-                </div>
-            `;
-            document.body.appendChild(modal);
-
-            document.getElementById("save-button").onclick = () => {
-                const hours = document.getElementById("hours-input").value;
-                const overtime = document.getElementById("overtime-checkbox").checked;
-                const timeOff = document.getElementById("timeoff-checkbox").checked;
-                saveHours(day, hours, overtime, timeOff);
-                document.body.removeChild(modal);
-            };
-        }
-
-        function TimeTrackingCalendar(user) {
-            const container = document.createElement("div");
-            container.className = "calendar-container max-w-4xl mx-auto p-4";
-
-            const title = document.createElement("h1");
-            title.className = "text-2xl font-bold text-center mb-4";
-            title.innerText = "Time Tracking Calendar";
-            container.appendChild(title);
-
-            const calendarGrid = document.createElement("div");
-            calendarGrid.className = "grid grid-cols-7 gap-4";
-
-            const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-            const currentDate = new Date();
-            const currentDay = currentDate.getDate();
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayCell = document.createElement("div");
-                dayCell.className = `calendar-cell ${day >= currentDay && day < currentDay + 7 ? 'current-week' : ''}`;
-                dayCell.innerText = day;
-
-                dayCell.onclick = () => {
-                    TimeEntryModal(day, (day, hours, overtime, timeOff) => {
-                        db.collection("timeEntries").doc(user.uid).set({
-                            [`day${day}`]: { hours, overtime, timeOff }
-                        }, { merge: true });
-                    });
-                };
-
-                calendarGrid.appendChild(dayCell);
-            }
-
-            container.appendChild(calendarGrid);
-
-            const submitSection = document.createElement("div");
-            submitSection.className = "submit-section";
-
-            const submitButton = document.createElement("button");
-            submitButton.className = "submit-button";
-            submitButton.innerText = "Submit Week";
-            submitButton.onclick = () => alert("Week submitted successfully!");
-
-            submitSection.appendChild(submitButton);
-            container.appendChild(submitSection);
-
-            return container;
-        }
-
-        function App() {
-            const root = document.getElementById("root");
-            root.innerHTML = "";
-            root.appendChild(LoginPage(() => root.appendChild(TimeTrackingCalendar())));
-        }
-
-        App();
     </script>
+
+    <!-- Application Scripts -->
+    <script src="js/utils.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/calendar.js"></script>
 </body>
 </html>
