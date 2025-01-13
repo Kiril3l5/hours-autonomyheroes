@@ -52,5 +52,43 @@ class TimeEntryModal {
     checkHours() {
         const hours = Number(this.hoursInput.value);
         document.getElementById('overtimeApproval').style.display = hours > 8 ? 'block' : 'none';
-        document.getElementById('shortDayApproval').style.display = hours < 8 ?'block' :'none' ; } save() { const hours=Number(this.hoursInput.value); const isTimeOff=this.timeOffCheck.checked; If hours is 0, simply clear the entry without confirmation if (hours===0) { this.onSave(this.selectedDate, null); this.close(); return; } Validate non-zero entries if (!isTimeOff) { if (hours< 8 && !this.shortDayApprovedCheck.checked) { alert('Please confirm manager awareness for less than 8 hours'); return; } if (hours> 8 && !this.overtimeApprovedCheck.checked) { alert('Please confirm overtime approval'); return; } } Create entry object const entry={ hours: isTimeOff ? 0 : hours, isTimeOff, managerApproved: isTimeOff && this.managerApprovedCheck.checked, overtimeApproved: hours> 8 && this.overtimeApprovedCheck.checked,
-        shortDayApproved: hours < 8 && this.shortDayApprovedCheck.checked, timestamp: new Date().toISOString() }; Call save callback this.onSave(this.selectedDate, entry); this.close(); }
+        document.getElementById('shortDayApproval').style.display = hours < 8 ? 'block' : 'none';
+    }
+
+    save() {
+    const hours = Number(this.hoursInput.value);
+    const isTimeOff = this.timeOffCheck.checked;
+
+    // If hours is 0, simply clear the entry without confirmation
+    if (hours === 0) {
+        this.onSave(this.selectedDate, null);
+        this.close();
+        return;
+    }
+
+    // Validate non-zero entries
+    if (!isTimeOff) {
+        if (hours < 8 && !this.shortDayApprovedCheck.checked) {
+            alert('Please confirm manager awareness for less than 8 hours');
+            return;
+        }
+        if (hours > 8 && !this.overtimeApprovedCheck.checked) {
+            alert('Please confirm overtime approval');
+            return;
+        }
+    }
+
+    // Create entry object
+    const entry = {
+        hours: isTimeOff ? 0 : hours,
+        isTimeOff,
+        managerApproved: isTimeOff && this.managerApprovedCheck.checked,
+        overtimeApproved: hours > 8 && this.overtimeApprovedCheck.checked,
+        shortDayApproved: hours < 8 && this.shortDayApprovedCheck.checked,
+        timestamp: new Date().toISOString()
+    };
+
+    // Call save callback
+    this.onSave(this.selectedDate, entry);
+    this.close();
+}
