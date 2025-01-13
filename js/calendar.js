@@ -4,195 +4,129 @@ class TimeTrackingCalendar {
         this.currentDate = new Date();
         this.timeEntries = {};
         this.submittedWeeks = {};
-        this.modal = new TimeEntryModal((date, entry) => this.saveEntry(date, entry));
-
-        // Initialize Firebase references
-        this.db = firebase.firestore();
-        this.auth = firebase.auth();
-
-        // Bind UI elements
+        
+        // Initialize elements
         this.calendarEl = document.getElementById('calendar');
         this.summaryEl = document.getElementById('weekSummary');
         
+        // Create modal with callback to handle updates
+        this.modal = new TimeEntryModal((date, entry) => {
+            if (entry === null) {
+                delete this.timeEntries[date.toISOString()];
+            } else {
+                this.timeEntries[date.toISOString()] = entry;
+            }
+            
+            // Save to local storage
+            localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
+            
+            // Update both calendar and summary immediately
+            this.render();
+            this.updateWeekSummary();
+        });
+
         // Add event listeners
-        document.getElementById('prevMonth').addEventListener('click', () => this.previousMonth());
-        document.getElementById('nextMonth').addEventListener('click', () => this.nextMonth());
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+            this.render();
+        });
+        
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+            this.render();
+        });
+        
         document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
 
+        // Load saved data
+        this.loadSavedData();
+        
         // Initial render
         this.render();
-        this.loadUserData();
+        this.updateWeekSummary();
     }
 
-    async loadUserData() {
-        // Here you would load user's entries from Firebase
-        // For now, using local storage
+    loadSavedData() {
         const savedEntries = localStorage.getItem('timeEntries');
         const savedSubmissions = localStorage.getItem('submittedWeeks');
         
-        if (savedEntries) this.timeEntries = JSON.parse(savedEntries);
-        if (savedSubmissions) this.submittedWeeks = JSON.parse(savedSubmissions);
+        if (savedEntries) {
+            this.timeEntries = JSON.parse(savedEntries);
+        }
         
-        this.render();
-    }
-
-    saveEntry(date, entry) {
-        if (entry === null) {
-            delete this.timeEntries[date.toISOString()];
-        } else {
-            this.timeEntries[date.toISOString()] = entry;
+        if (savedSubmissions) {
+            this.submittedWeeks = JSON.parse(savedSubmissions);
         }
-
-        // Save to local storage
-        localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
-        
-        // Force update both calendar and summary
-        this.render();
-        this.updateWeekSummary();
-    }
-
-    render() {
-        // Update month display
-        document.getElementById('currentMonth').textContent = this.currentDate.toLocaleDateString('en-US', { 
-            month: 'long', 
-            year: 'numeric' 
-        });
-
-        // Clear calendar except headers
-        while (this.calendarEl.children.length > 7) {
-            this.calendarEl.removeChild(this.calendarEl.lastChild);
-        }
-
-        const year = this.currentDate.getFullYear();
-        const month = this.currentDate.getMonth();
-        const firstDay = getFirstDayOfMonth(year, month);
-        const daysInMonth = getDaysInMonth(year, month);
-        
-        // Adjust for Monday start
-        let startDay = firstDay === 0 ? 6 : firstDay - 1;
-
-        // Add empty cells
-        for (let i = 0; i < startDay; i++) {
-            const emptyDay = document.createElement('div');
-            emptyDay.className = 'day empty';
-            this.calendarEl.appendChild(emptyDay);
-        }
-
-        // Add days
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(year, month, day);
-            const isCurrentWeek = checkIfCurrentWeek(date);
-            const isPastWeek = checkIfPastWeek(date);
-            const weekNumber = getWeekNumber(date);
-            
-            const dayEl = document.createElement('div');
-            dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
-            
-            const dayContent = document.createElement('div');
-            dayContent.className = 'day-content';
-            
-            // Add day number
-            const dayNumber = document.createElement('div');
-            dayNumber.className = 'day-number';
-            dayNumber.textContent = day;
-            dayEl.appendChild(dayNumber);
-
-            // Add entry info if exists
-            const entry = this.timeEntries[date.toISOString()];
-            if (entry) {
-                const entryDisplay = document.createElement('div');
-                if (entry.isTimeOff) {
-                    entryDisplay.className = 'hours-display time-off';
-                    entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
-                } else {
-                    entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
-                    entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
-                }
-                dayContent.appendChild(entryDisplay);
-            }
-
-            dayEl.appendChild(dayContent);
-
-            // Add click handler for current week
-            if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
-                dayEl.onclick = () => this.modal.open(date, entry);
-            }
-
-            this.calendarEl.appendChild(dayEl);
-        }
-
-        this.updateWeekSummary();
     }
 
     updateWeekSummary() {
         const weekDates = getWeekDates(new Date());
         const weekNumber = getWeekNumber(new Date());
-        const totalHours = calculateWeekTotal(this.timeEntries, weekDates);
+        let totalHours = 0;
         
-        let summaryHtml = `
-            <div class="week-total font-bold text-lg mb-4">
-                Week ${weekNumber} Total: ${totalHours}h
-            </div>
-            <div class="week-details grid gap-2">
-        `;
+        let summaryHtml = '<div class="week-details">';
         
         weekDates.forEach(date => {
             const entry = this.timeEntries[date.toISOString()];
-            const isToday = date.toDateString() === new Date().toDateString();
-            const dayClass = isToday ? 'font-bold text-[#ff8d00]' : '';
+            const dayHours = entry && !entry.isTimeOff ? entry.hours : 0;
+            totalHours += dayHours;
             
-            let entryText = 'No Entry';
-            let statusClass = 'text-gray-500';
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
+            
+            let statusHtml = 'No Entry';
+            let statusStyle = 'color: #6C7A89;';
             
             if (entry) {
                 if (entry.isTimeOff) {
-                    entryText = entry.managerApproved ? 'Time Off (Approved)' : 'Time Off';
-                    statusClass = 'text-red-600';
+                    statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
+                    statusStyle = 'color: #dc2626;';
                 } else {
-                    entryText = `${entry.hours}h`;
-                    statusClass = entry.hours > 8 ? 'text-orange-600' : 'text-green-600';
+                    statusHtml = `${entry.hours}h`;
+                    statusStyle = entry.hours > 8 ? 'color: #ff8d00;' : 'color: #059669;';
                 }
             }
-
+            
             summaryHtml += `
-                <div class="day-summary flex justify-between ${dayClass}">
+                <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
                     <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
-                    <span class="${statusClass}">${entryText}</span>
+                    <span style="${statusStyle}">${statusHtml}</span>
                 </div>
             `;
         });
-
+        
         summaryHtml += '</div>';
-
-        // Add warning if week is incomplete
-        if (this.submittedWeeks[weekNumber]) {
+        
+        // Add total hours and status
+        summaryHtml = `
+            <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px;">
+                Total Hours: ${totalHours}h
+            </div>
+            ${summaryHtml}
+        `;
+        
+        // Add warning if needed
+        if (totalHours < 40 && !this.submittedWeeks[weekNumber]) {
             summaryHtml += `
-                <div class="mt-4 text-center text-gray-500">
-                    Week has been submitted and locked
-                </div>
-            `;
-        } else if (totalHours < 40) {
-            summaryHtml += `
-                <div class="mt-4 text-center text-orange-600">
-                    Week is incomplete (${40 - totalHours}h remaining to reach 40h)
+                <div style="text-align: center; color: #dc2626; margin-top: 16px;">
+                    ${40 - totalHours}h remaining to reach 40h week
                 </div>
             `;
         }
-
+        
+        // Update the summary element
         this.summaryEl.innerHTML = summaryHtml;
         
-        // Update submit button state
+        // Update submit button
         const submitBtn = document.getElementById('submitWeek');
         if (this.submittedWeeks[weekNumber]) {
             submitBtn.disabled = true;
-            submitBtn.className = 'btn opacity-50 cursor-not-allowed';
+            submitBtn.style.opacity = '0.5';
             submitBtn.textContent = 'Week Submitted';
         } else {
             submitBtn.disabled = false;
-            submitBtn.className = 'btn';
-            submitBtn.textContent = totalHours >= 40 ? 
-                'Submit Week for Approval' : 
-                'Complete 40h Before Submitting';
+            submitBtn.style.opacity = '1';
+            submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
         }
     }
 
