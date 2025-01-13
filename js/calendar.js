@@ -129,6 +129,75 @@ class TimeTrackingCalendar {
             submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
         }
     }
+	
+	render() {
+        // Update month display
+        document.getElementById('currentMonth').textContent = this.currentDate.toLocaleDateString('en-US', { 
+            month: 'long', 
+            year: 'numeric' 
+        });
+
+        // Clear calendar except headers
+        while (this.calendarEl.children.length > 7) {
+            this.calendarEl.removeChild(this.calendarEl.lastChild);
+        }
+
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth();
+        const firstDay = getFirstDayOfMonth(year, month);
+        const daysInMonth = getDaysInMonth(year, month);
+        
+        // Adjust for Monday start (0 = Sunday, so we want 1 = Monday)
+        let startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+        // Add empty cells for days before start of month
+        for (let i = 0; i < startDay; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'day empty';
+            this.calendarEl.appendChild(emptyDay);
+        }
+
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const dayEl = document.createElement('div');
+            const isCurrentWeek = checkIfCurrentWeek(date);
+            const isPastWeek = checkIfPastWeek(date);
+            const weekNumber = getWeekNumber(date);
+            
+            dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
+            
+            // Add day number
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'day-number';
+            dayNumber.textContent = day;
+            dayEl.appendChild(dayNumber);
+
+            // Add entry info if exists
+            const entry = this.timeEntries[date.toISOString()];
+            if (entry) {
+                const entryDisplay = document.createElement('div');
+                if (entry.isTimeOff) {
+                    entryDisplay.className = 'hours-display time-off';
+                    entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
+                } else {
+                    entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
+                    entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
+                }
+                dayEl.appendChild(entryDisplay);
+            }
+
+            // Add click handler for current week
+            if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
+                dayEl.onclick = () => this.modal.open(date, entry);
+            }
+
+            this.calendarEl.appendChild(dayEl);
+        }
+
+        // Update week summary
+        this.updateWeekSummary();
+    }
 
     previousMonth() {
         this.currentDate.setMonth(this.currentDate.getMonth() - 1);
