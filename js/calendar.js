@@ -53,93 +53,118 @@ class TimeTrackingCalendar {
     }
 
     handleTimeEntry(date, entry) {
-        const dateKey = date.toISOString();
-        console.log('Handling time entry for:', dateKey, entry);
+    const dateKey = date.toISOString();
+    console.log('Saving entry for date:', date.toLocaleDateString(), 'Entry:', entry);
 
-        if (entry === null) {
-            delete this.timeEntries[dateKey];
-        } else {
-            this.timeEntries[dateKey] = entry;
-        }
-        
-        // Save to user-specific storage
-        localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
-        
-        console.log('Current time entries:', this.timeEntries);
-        
-        // Force both calendar and summary updates
-        this.render();
-        this.updateWeekSummary();
+    if (entry === null) {
+        delete this.timeEntries[dateKey];
+        console.log('Entry deleted');
+    } else {
+        this.timeEntries[dateKey] = {
+            ...entry,
+            dateKey, // Store the date key with the entry
+            timestamp: new Date().toISOString()
+        };
+        console.log('Entry saved:', this.timeEntries[dateKey]);
     }
+    
+    // Save to user-specific storage
+    localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
+    
+    // Update displays
+    this.render();
+    this.updateWeekSummary();
+}
 
     updateWeekSummary() {
-        const weekDates = getWeekDates(new Date());
-        const weekNumber = getWeekNumber(new Date());
-        
-        // Calculate total hours directly from entries
-        let totalHours = weekDates.reduce((total, date) => {
-            const entry = this.timeEntries[date.toISOString()];
-            const hours = entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0;
-            console.log(`Date: ${date.toDateString()}, Hours: ${hours}`);
-            return total + hours;
-        }, 0);
+    // Get current week dates and calculate week number
+    const today = new Date();
+    const weekDates = getWeekDates(today);
+    const weekNumber = getWeekNumber(today);
+    
+    console.log('Updating summary for week:', weekNumber);
 
-        console.log('Total hours calculated:', totalHours);
+    // Calculate total hours and build summary
+    let totalHours = 0;
+    let summaryHtml = '<div class="week-details">';
+
+    weekDates.forEach(date => {
+        // Get the ISO string for the date at midnight
+        const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
+        const entry = this.timeEntries[dateKey];
         
-        let summaryHtml = '<div class="week-details">';
+        console.log('Checking date:', date.toLocaleDateString(), 'Entry:', entry);
+
+        // Calculate hours for this day
+        if (entry && !entry.isTimeOff) {
+            const dayHours = Number(entry.hours) || 0;
+            totalHours += dayHours;
+            console.log('Adding hours:', dayHours, 'Total:', totalHours);
+        }
+
+        const isToday = date.toDateString() === today.toDateString();
+        const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
         
-        weekDates.forEach(date => {
-            const dateKey = date.toISOString();
-            const entry = this.timeEntries[dateKey];
-            
-            const isToday = date.toDateString() === new Date().toDateString();
-            const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
-            
-            let statusHtml = 'No Entry';
-            let statusStyle = 'color: #6C7A89;';
-            
-            if (entry) {
-                if (entry.isTimeOff) {
-                    statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
-                    statusStyle = 'color: #dc2626;';
+        let statusHtml = 'No Entry';
+        let statusStyle = 'color: #6C7A89;';
+        
+        if (entry) {
+            if (entry.isTimeOff) {
+                statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
+                statusStyle = 'color: #dc2626;';
+            } else {
+                statusHtml = `${entry.hours}h`;
+                if (entry.hours > 8) {
+                    statusStyle = 'color: #ff8d00;';
+                    if (entry.overtimeApproved) statusHtml += ' (OT ✓)';
+                } else if (entry.hours < 8) {
+                    statusStyle = 'color: #2563eb;';
+                    if (entry.shortDayApproved) statusHtml += ' (✓)';
                 } else {
-                    statusHtml = `${entry.hours}h`;
-                    statusStyle = entry.hours > 8 ? 'color: #ff8d00;' : 'color: #059669;';
+                    statusStyle = 'color: #059669;';
                 }
             }
-            
-            summaryHtml += `
-                <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
-                    <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
-                    <span style="${statusStyle}">${statusHtml}</span>
-                </div>
-            `;
-        });
-        
-        summaryHtml += '</div>';
-        
-        // Add total hours and status
-        summaryHtml = `
-            <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px; text-align: center;">
-                Week ${weekNumber} Total: ${totalHours}h
+        }
+
+        summaryHtml += `
+            <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
+                <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+                <span style="${statusStyle}">${statusHtml}</span>
             </div>
-            ${summaryHtml}
         `;
-        
-        // Add warning if needed
-        if (totalHours < 40 && !this.submittedWeeks[weekNumber]) {
+    });
+
+    // Add week total and status
+    summaryHtml = `
+        <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px; text-align: center;">
+            Week ${weekNumber} Total: ${totalHours}h
+        </div>
+        ${summaryHtml}
+    `;
+
+    // Add remaining hours warning or completion status
+    if (!this.submittedWeeks[weekNumber]) {
+        if (totalHours < 40) {
             summaryHtml += `
                 <div style="text-align: center; color: #dc2626; margin-top: 16px;">
                     ${40 - totalHours}h remaining to reach 40h week
                 </div>
             `;
+        } else if (totalHours > 40) {
+            summaryHtml += `
+                <div style="text-align: center; color: #ff8d00; margin-top: 16px;">
+                    ${totalHours - 40}h overtime this week
+                </div>
+            `;
         }
-        
-        // Update the summary element
-        this.summaryEl.innerHTML = summaryHtml;
-        
-        // Update submit button
-        const submitBtn = document.getElementById('submitWeek');
+    }
+
+    // Update the summary element
+    this.summaryEl.innerHTML = summaryHtml;
+
+    // Update submit button state
+    const submitBtn = document.getElementById('submitWeek');
+    if (submitBtn) {
         if (this.submittedWeeks[weekNumber]) {
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.5';
@@ -150,6 +175,7 @@ class TimeTrackingCalendar {
             submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
         }
     }
+}
 
     render() {
         // Update month display
