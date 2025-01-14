@@ -97,6 +97,20 @@ class AuthManager {
             logoutBtn.addEventListener('click', () => this.logout());
         }
     }
+	
+	firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // User is signed in
+        if (!window.calendar) {
+            window.calendar = new TimeTrackingCalendar();
+        }
+    } else {
+        // User is signed out
+        window.calendar = null;
+        // Clear any existing calendar data
+        document.getElementById('calendarContainer').classList.remove('active');
+    }
+});
 
     initAuthStateObserver() {
         this.auth.onAuthStateChanged((user) => {

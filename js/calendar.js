@@ -1,38 +1,38 @@
 // calendar.js
 class TimeTrackingCalendar {
     constructor() {
-    this.currentDate = new Date();
-    this.timeEntries = {};
-    this.submittedWeeks = {};
-    this.currentWeekDates = getWeekDates(new Date());
-    
-    // Initialize elements
-    this.calendarEl = document.getElementById('calendar');
-    this.summaryEl = document.getElementById('weekSummary');
-    
-    // Create modal with callback to handle updates
-    this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
+        this.currentDate = new Date();
+        this.timeEntries = {};
+        this.submittedWeeks = {};
+        this.userId = firebase.auth().currentUser.uid; // Get current user's ID
+        
+        // Initialize elements
+        this.calendarEl = document.getElementById('calendar');
+        this.summaryEl = document.getElementById('weekSummary');
+        
+        // Create modal with callback to handle updates
+        this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
 
-    // Add event listeners
-    document.getElementById('prevMonth').addEventListener('click', () => {
-        this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-        this.render();
-    });
-    
-    document.getElementById('nextMonth').addEventListener('click', () => {
-        this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-        this.render();
-    });
-    
-    document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
+        // Add event listeners
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+            this.render();
+        });
+        
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+            this.render();
+        });
+        
+        document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
 
-    // Load saved data
-    this.loadSavedData();
-    
-    // Initial render
-    this.render();
-    this.updateWeekSummary();
-}
+        // Load saved data
+        this.loadSavedData();
+        
+        // Initial render
+        this.render();
+        this.updateWeekSummary();
+    }
 
 // Add this new method to handle time entries
 handleTimeEntry(date, entry) {
@@ -56,8 +56,9 @@ handleTimeEntry(date, entry) {
 }
 
     loadSavedData() {
-        const savedEntries = localStorage.getItem('timeEntries');
-        const savedSubmissions = localStorage.getItem('submittedWeeks');
+        // Use user-specific keys for localStorage
+        const savedEntries = localStorage.getItem(`timeEntries_${this.userId}`);
+        const savedSubmissions = localStorage.getItem(`submittedWeeks_${this.userId}`);
         
         if (savedEntries) {
             this.timeEntries = JSON.parse(savedEntries);
@@ -67,6 +68,50 @@ handleTimeEntry(date, entry) {
             this.submittedWeeks = JSON.parse(savedSubmissions);
         }
     }
+
+    handleTimeEntry(date, entry) {
+        const dateKey = date.toISOString();
+
+        if (entry === null) {
+            delete this.timeEntries[dateKey];
+        } else {
+            this.timeEntries[dateKey] = entry;
+        }
+        
+        // Save to user-specific storage
+        localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
+        
+        // Update display
+        this.render();
+        this.updateWeekSummary();
+    }
+
+    async submitWeek() {
+        const weekNumber = getWeekNumber(new Date());
+        
+        if (this.submittedWeeks[weekNumber]) {
+            alert('This week has already been submitted');
+            return;
+        }
+
+        const confirmed = confirm(
+            'Are you sure you want to submit this week? ' +
+            'You won\'t be able to make changes after submission.'
+        );
+
+        if (confirmed) {
+            try {
+                this.submittedWeeks[weekNumber] = true;
+                // Save to user-specific storage
+                localStorage.setItem(`submittedWeeks_${this.userId}`, JSON.stringify(this.submittedWeeks));
+                alert('Week submitted successfully!');
+                this.render();
+            } catch (error) {
+                alert('Error submitting week: ' + error.message);
+            }
+        }
+    }
+}
 
     updateWeekSummary() {
     const today = new Date();
