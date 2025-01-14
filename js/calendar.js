@@ -1,4 +1,5 @@
 // calendar.js
+window.TimeTrackingCalendar = class TimeTrackingCalendar {
 class TimeTrackingCalendar {
     constructor() {
         const currentUser = firebase.auth().currentUser;
@@ -403,5 +404,6 @@ async loadSubmittedEntries() {
     } catch (error) {
         console.error('Error loading submitted entries:', error);
     }
+}
 }
 }

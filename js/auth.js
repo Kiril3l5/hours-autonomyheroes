@@ -29,15 +29,19 @@ class AuthManager {
 
         if (user) {
             // User is signed in
-            console.log('User signed in:', user.uid); // Debug log
+            console.log('User signed in:', user.uid);
             authContainer.classList.remove('active');
             calendarContainer.classList.add('active');
             document.getElementById('userEmail').textContent = user.email;
 
-            // Initialize calendar with a slight delay to ensure auth is complete
+            // Check if TimeTrackingCalendar exists before using it
             setTimeout(() => {
-                if (!window.calendar) {
-                    window.calendar = new TimeTrackingCalendar();
+                if (typeof TimeTrackingCalendar !== 'undefined') {
+                    if (!window.calendar) {
+                        window.calendar = new TimeTrackingCalendar();
+                    }
+                } else {
+                    console.error('TimeTrackingCalendar not loaded');
                 }
             }, 100);
         } else {
@@ -45,7 +49,9 @@ class AuthManager {
             authContainer.classList.add('active');
             calendarContainer.classList.remove('active');
             document.getElementById('userEmail').textContent = '';
-            window.calendar = null;
+            if (window.calendar) {
+                window.calendar = null;
+            }
         }
     });
 }
