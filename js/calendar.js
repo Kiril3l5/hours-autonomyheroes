@@ -1,51 +1,59 @@
 // calendar.js
 class TimeTrackingCalendar {
     constructor() {
-        this.currentDate = new Date();
-        this.timeEntries = {};
-        this.submittedWeeks = {};
-		this.currentWeekDates = getWeekDates(new Date());
-        
-        // Initialize elements
-        this.calendarEl = document.getElementById('calendar');
-        this.summaryEl = document.getElementById('weekSummary');
-        
-        // Create modal with callback to handle updates
-        this.modal = new TimeEntryModal((date, entry) => {
-            if (entry === null) {
-                delete this.timeEntries[date.toISOString()];
-            } else {
-                this.timeEntries[date.toISOString()] = entry;
-            }
-            
-            // Save to local storage
-            localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
-            
-            // Update both calendar and summary immediately
-            this.render();
-            this.updateWeekSummary();
-        });
+    this.currentDate = new Date();
+    this.timeEntries = {};
+    this.submittedWeeks = {};
+    this.currentWeekDates = getWeekDates(new Date());
+    
+    // Initialize elements
+    this.calendarEl = document.getElementById('calendar');
+    this.summaryEl = document.getElementById('weekSummary');
+    
+    // Create modal with callback to handle updates
+    this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
 
-        // Add event listeners
-        document.getElementById('prevMonth').addEventListener('click', () => {
-            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-            this.render();
-        });
-        
-        document.getElementById('nextMonth').addEventListener('click', () => {
-            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-            this.render();
-        });
-        
-        document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
-
-        // Load saved data
-        this.loadSavedData();
-        
-        // Initial render
+    // Add event listeners
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        this.currentDate.setMonth(this.currentDate.getMonth() - 1);
         this.render();
-        this.updateWeekSummary();
+    });
+    
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+        this.render();
+    });
+    
+    document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
+
+    // Load saved data
+    this.loadSavedData();
+    
+    // Initial render
+    this.render();
+    this.updateWeekSummary();
+}
+
+// Add this new method to handle time entries
+handleTimeEntry(date, entry) {
+    const dateKey = date.toISOString();
+    console.log('Handling time entry for:', dateKey, entry);
+
+    if (entry === null) {
+        delete this.timeEntries[dateKey];
+    } else {
+        this.timeEntries[dateKey] = entry;
     }
+    
+    // Save to local storage
+    localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
+    
+    console.log('Current time entries:', this.timeEntries);
+    
+    // Force both calendar and summary updates
+    this.render();
+    this.updateWeekSummary();
+}
 
     loadSavedData() {
         const savedEntries = localStorage.getItem('timeEntries');
@@ -61,28 +69,28 @@ class TimeTrackingCalendar {
     }
 
     updateWeekSummary() {
-    // Get current week dates and number
-    this.currentWeekDates = getWeekDates(new Date());
-    const weekNumber = getWeekNumber(new Date());
+    const today = new Date();
+    this.currentWeekDates = getWeekDates(today);
+    const weekNumber = getWeekNumber(today);
     
-    // Calculate total hours directly from entries
-    let totalHours = this.currentWeekDates.reduce((total, date) => {
-        const dateKey = date.toISOString();
-        const entry = this.timeEntries[dateKey];
-        const hours = entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0;
-        console.log(`Date: ${date.toDateString()}, Hours: ${hours}`); // Debug log
-        return total + hours;
-    }, 0);
+    console.log('Updating summary for week:', weekNumber);
+    console.log('Current week dates:', this.currentWeekDates);
+    console.log('Current entries:', this.timeEntries);
 
-    console.log('Total hours calculated:', totalHours); // Debug log
-    
+    let totalHours = 0;
     let summaryHtml = '<div class="week-details">';
-    
+
     this.currentWeekDates.forEach(date => {
         const dateKey = date.toISOString();
         const entry = this.timeEntries[dateKey];
         
-        const isToday = date.toDateString() === new Date().toDateString();
+        // Calculate hours for this day
+        if (entry && !entry.isTimeOff) {
+            totalHours += Number(entry.hours) || 0;
+            console.log(`Added ${entry.hours} hours for ${date.toDateString()}`);
+        }
+
+        const isToday = date.toDateString() === today.toDateString();
         const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
         
         let statusHtml = 'No Entry';
@@ -94,10 +102,18 @@ class TimeTrackingCalendar {
                 statusStyle = 'color: #dc2626;';
             } else {
                 statusHtml = `${entry.hours}h`;
-                statusStyle = entry.hours > 8 ? 'color: #ff8d00;' : 'color: #059669;';
+                if (entry.hours > 8) {
+                    statusStyle = 'color: #ff8d00;';
+                    if (entry.overtimeApproved) statusHtml += ' (OT ✓)';
+                } else if (entry.hours < 8) {
+                    statusStyle = 'color: #2563eb;';
+                    if (entry.shortDayApproved) statusHtml += ' (✓)';
+                } else {
+                    statusStyle = 'color: #059669;';
+                }
             }
         }
-        
+
         summaryHtml += `
             <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
                 <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
@@ -105,36 +121,43 @@ class TimeTrackingCalendar {
             </div>
         `;
     });
-    
-    // Add total hours and status
+
+    // Display total and remaining hours
     summaryHtml = `
         <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px; text-align: center;">
             Week ${weekNumber} Total: ${totalHours}h
         </div>
         ${summaryHtml}
     `;
-    
-    // Add warning if needed
-    if (totalHours < 40 && !this.submittedWeeks[weekNumber]) {
-        summaryHtml += `
-            <div style="text-align: center; color: #dc2626; margin-top: 16px;">
-                ${40 - totalHours}h remaining to reach 40h week
-            </div>
-        `;
-    }
-    
-    this.summaryEl.innerHTML = summaryHtml;
 
-    // Update submit button
+    if (!this.submittedWeeks[weekNumber]) {
+        if (totalHours < 40) {
+            summaryHtml += `
+                <div style="text-align: center; color: #dc2626; margin-top: 16px;">
+                    ${40 - totalHours}h remaining to reach 40h week
+                </div>
+            `;
+        }
+    }
+
+    console.log('Total hours calculated:', totalHours);
+    
+    // Update the summary element and submit button
+    if (this.summaryEl) {
+        this.summaryEl.innerHTML = summaryHtml;
+    }
+
     const submitBtn = document.getElementById('submitWeek');
-    if (this.submittedWeeks[weekNumber]) {
-        submitBtn.disabled = true;
-        submitBtn.style.opacity = '0.5';
-        submitBtn.textContent = 'Week Submitted';
-    } else {
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-        submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
+    if (submitBtn) {
+        if (this.submittedWeeks[weekNumber]) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.textContent = 'Week Submitted';
+        } else {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
+        }
     }
 }
 	
