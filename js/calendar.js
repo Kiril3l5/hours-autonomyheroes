@@ -406,4 +406,4 @@ async loadSubmittedEntries() {
     }
 }
 }
-}
+window.TimeTrackingCalendar = TimeTrackingCalendar;

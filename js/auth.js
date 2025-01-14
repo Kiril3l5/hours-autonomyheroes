@@ -34,18 +34,24 @@ class AuthManager {
             calendarContainer.classList.add('active');
             document.getElementById('userEmail').textContent = user.email;
 
-            // Check if TimeTrackingCalendar exists before using it
-            setTimeout(() => {
-                if (typeof TimeTrackingCalendar !== 'undefined') {
+            // Add more robust checking for TimeTrackingCalendar
+            const initCalendar = () => {
+                if (window.TimeTrackingCalendar) {
+                    console.log('Initializing calendar...');
                     if (!window.calendar) {
                         window.calendar = new TimeTrackingCalendar();
                     }
                 } else {
-                    console.error('TimeTrackingCalendar not loaded');
+                    console.error('TimeTrackingCalendar not loaded, retrying...');
+                    setTimeout(initCalendar, 100); // retry after 100ms
                 }
-            }, 100);
+            };
+
+            // Start initialization attempt
+            initCalendar();
         } else {
             // User is signed out
+            console.log('User signed out');
             authContainer.classList.add('active');
             calendarContainer.classList.remove('active');
             document.getElementById('userEmail').textContent = '';
