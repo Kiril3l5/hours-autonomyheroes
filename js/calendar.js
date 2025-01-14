@@ -244,27 +244,105 @@ class TimeTrackingCalendar {
     }
 
     async submitWeek() {
-        const weekNumber = getWeekNumber(new Date());
+    const weekNumber = getWeekNumber(new Date());
+    const year = new Date().getFullYear();
+    const weekId = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+    
+    if (this.submittedWeeks[weekNumber]) {
+        alert('This week has already been submitted');
+        return;
+    }
+
+    // Calculate total hours and prepare hours array
+    const weekDates = getWeekDates(new Date());
+    const hoursArray = weekDates.map(date => {
+        const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
+        const entry = this.timeEntries[dateKey] || null;
         
-        if (this.submittedWeeks[weekNumber]) {
-            alert('This week has already been submitted');
+        return {
+            date: date.toISOString(),
+            hours: entry?.hours || 0,
+            isTimeOff: entry?.isTimeOff || false,
+            managerApproved: entry?.managerApproved || false,
+            overtimeApproved: entry?.overtimeApproved || false,
+            shortDayApproved: entry?.shortDayApproved || false
+        };
+    });
+
+    const totalHours = hoursArray.reduce((sum, day) => 
+        sum + (day.isTimeOff ? 0 : day.hours), 0);
+
+    if (totalHours < 40) {
+        if (!confirm(`You only have ${totalHours} hours this week. Are you sure you want to submit?`)) {
             return;
         }
+    }
 
-        const confirmed = confirm(
-            'Are you sure you want to submit this week? ' +
-            'You won\'t be able to make changes after submission.'
-        );
+    const confirmed = confirm(
+        'Are you sure you want to submit this week? ' +
+        'You won\'t be able to make changes after submission.'
+    );
 
-        if (confirmed) {
-            try {
-                this.submittedWeeks[weekNumber] = true;
-                localStorage.setItem(`submittedWeeks_${this.userId}`, JSON.stringify(this.submittedWeeks));
-                alert('Week submitted successfully!');
-                this.render();
-            } catch (error) {
-                alert('Error submitting week: ' + error.message);
-            }
+    if (confirmed) {
+        try {
+            // Create unique document ID
+            const docId = `${this.userId}_${weekId}`;
+            
+            // Prepare timeEntry document
+            const timeEntry = {
+                workerId: this.userId,
+                week: weekId,
+                hours: hoursArray,
+                totalHours: totalHours,
+                status: 'pending',
+                approvedBy: null,
+                submittedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            // Save to Firestore
+            await firebase.firestore().collection('timeEntries').doc(docId).set(timeEntry);
+
+            // Update local state
+            this.submittedWeeks[weekNumber] = true;
+            localStorage.setItem(`submittedWeeks_${this.userId}`, JSON.stringify(this.submittedWeeks));
+            
+            alert('Week submitted successfully!');
+            this.render();
+        } catch (error) {
+            console.error('Error submitting week:', error);
+            alert('Error submitting week: ' + error.message);
         }
     }
+}
+async loadSubmittedEntries() {
+    try {
+        const snapshot = await firebase.firestore()
+            .collection('timeEntries')
+            .where('workerId', '==', this.userId)
+            .get();
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const weekNumber = parseInt(data.week.split('-W')[1]);
+            this.submittedWeeks[weekNumber] = true;
+            
+            // Load the hours into timeEntries
+            data.hours.forEach(hourEntry => {
+                const dateKey = new Date(hourEntry.date).toISOString();
+                if (hourEntry.hours > 0 || hourEntry.isTimeOff) {
+                    this.timeEntries[dateKey] = hourEntry;
+                }
+            });
+        });
+
+        // Update local storage
+        localStorage.setItem(`submittedWeeks_${this.userId}`, JSON.stringify(this.submittedWeeks));
+        localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
+        
+        this.render();
+    } catch (error) {
+        console.error('Error loading submitted entries:', error);
+    }
+}
 }
