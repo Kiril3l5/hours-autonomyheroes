@@ -33,6 +33,7 @@ class TimeTrackingCalendar {
 
         // Load saved data
         this.loadSavedData();
+		this.loadSubmittedEntries();
         
         // Initial render
         this.render();
@@ -223,16 +224,25 @@ class TimeTrackingCalendar {
             // Add entry info if exists
             const entry = this.timeEntries[date.toISOString()];
             if (entry) {
-                const entryDisplay = document.createElement('div');
-                if (entry.isTimeOff) {
-                    entryDisplay.className = 'hours-display time-off';
-                    entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
-                } else {
-                    entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
-                    entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
-                }
-                dayEl.appendChild(entryDisplay);
-            }
+    const entryDisplay = document.createElement('div');
+    if (this.submittedWeeks[weekNumber]) {
+        // Add locked indicator
+        const lockIndicator = document.createElement('div');
+        lockIndicator.className = 'lock-indicator';
+        lockIndicator.innerHTML = '🔒';
+        lockIndicator.title = 'Week submitted - contact manager for changes';
+        dayEl.appendChild(lockIndicator);
+    }
+    
+    if (entry.isTimeOff) {
+        entryDisplay.className = 'hours-display time-off';
+        entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
+    } else {
+        entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
+        entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
+    }
+    dayEl.appendChild(entryDisplay);
+}
 
             // Add click handler for current week
             if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
@@ -248,53 +258,58 @@ class TimeTrackingCalendar {
     const year = new Date().getFullYear();
     const weekId = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
     
-    if (this.submittedWeeks[weekNumber]) {
-        alert('This week has already been submitted');
-        return;
-    }
+    try {
+        // Check if week is already submitted
+        const docId = `${this.userId}_${weekId}`;
+        const existingSubmission = await firebase.firestore()
+            .collection('timeEntries')
+            .doc(docId)
+            .get();
 
-    // Calculate total hours and prepare hours array
-    const weekDates = getWeekDates(new Date());
-    const hoursArray = weekDates.map(date => {
-        const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
-        const entry = this.timeEntries[dateKey] || null;
-        
-        return {
-            date: date.toISOString(),
-            hours: entry?.hours || 0,
-            isTimeOff: entry?.isTimeOff || false,
-            managerApproved: entry?.managerApproved || false,
-            overtimeApproved: entry?.overtimeApproved || false,
-            shortDayApproved: entry?.shortDayApproved || false
-        };
-    });
-
-    const totalHours = hoursArray.reduce((sum, day) => 
-        sum + (day.isTimeOff ? 0 : day.hours), 0);
-
-    if (totalHours < 40) {
-        if (!confirm(`You only have ${totalHours} hours this week. Are you sure you want to submit?`)) {
+        if (existingSubmission.exists) {
+            alert('This week has already been submitted. Please contact your manager if changes are needed.');
             return;
         }
-    }
 
-    const confirmed = confirm(
-        'Are you sure you want to submit this week? ' +
-        'You won\'t be able to make changes after submission.'
-    );
-
-    if (confirmed) {
-        try {
-            // Create unique document ID
-            const docId = `${this.userId}_${weekId}`;
+        // Calculate total hours
+        const weekDates = getWeekDates(new Date());
+        const hoursArray = weekDates.map(date => {
+            const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
+            const entry = this.timeEntries[dateKey] || null;
             
-            // Prepare timeEntry document
+            return {
+                date: date.toISOString(),
+                hours: entry?.hours || 0,
+                isTimeOff: entry?.isTimeOff || false,
+                managerApproved: entry?.managerApproved || false,
+                overtimeApproved: entry?.overtimeApproved || false,
+                shortDayApproved: entry?.shortDayApproved || false
+            };
+        });
+
+        const totalHours = hoursArray.reduce((sum, day) => 
+            sum + (day.isTimeOff ? 0 : day.hours), 0);
+
+        if (totalHours < 40) {
+            if (!confirm(`You only have ${totalHours} hours this week. Are you sure you want to submit?`)) {
+                return;
+            }
+        }
+
+        const confirmed = confirm(
+            'Are you sure you want to submit this week? ' +
+            'You won\'t be able to make changes after submission. ' +
+            'Contact your manager if changes are needed after submission.'
+        );
+
+        if (confirmed) {
+            // Create timeEntry document
             const timeEntry = {
                 workerId: this.userId,
                 week: weekId,
                 hours: hoursArray,
                 totalHours: totalHours,
-                status: 'pending',
+                status: 'pending_approval',
                 approvedBy: null,
                 submittedAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
@@ -307,10 +322,14 @@ class TimeTrackingCalendar {
             this.submittedWeeks[weekNumber] = true;
             localStorage.setItem(`submittedWeeks_${this.userId}`, JSON.stringify(this.submittedWeeks));
             
-            alert('Week submitted successfully!');
+            alert('Week submitted successfully! Your manager will review the submission.');
             this.render();
-        } catch (error) {
-            console.error('Error submitting week:', error);
+        }
+    } catch (error) {
+        console.error('Error submitting week:', error);
+        if (error.code === 'permission-denied') {
+            alert('Permission denied. Please make sure you are logged in properly.');
+        } else {
             alert('Error submitting week: ' + error.message);
         }
     }

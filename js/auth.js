@@ -88,26 +88,32 @@ class AuthManager {
 
         // Register form
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const firstName = document.getElementById('regFirstName').value;
-            const lastName = document.getElementById('regLastName').value;
+    e.preventDefault();
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    const firstName = document.getElementById('regFirstName').value;
+    const lastName = document.getElementById('regLastName').value;
 
-            try {
-                const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
-                // Add user profile to Firestore
-                await this.db.collection('users').doc(userCredential.user.uid).set({
-                    firstName,
-                    lastName,
-                    email,
-                    createdAt: new Date().toISOString()
-                });
-                // Success is handled by the auth state observer
-            } catch (error) {
-                alert(error.message);
-            }
+    try {
+        // Create user in Firebase Auth
+        const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
+        const userId = userCredential.user.uid;
+
+        // Create worker document
+        await this.db.collection('workers').doc(userId).set({
+            firstName,
+            lastName,
+            email,
+            role: 'worker',
+            createdAt: new Date().toISOString(),
+            status: 'active'
         });
+
+        // Success is handled by the auth state observer
+    } catch (error) {
+        alert(error.message);
+    }
+});
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', () => {

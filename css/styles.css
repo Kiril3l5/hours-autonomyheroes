@@ -416,3 +416,27 @@ input[type="number"] {
     border-radius: 4px;
     font-size: 16px;
 }
+.lock-indicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 12px;
+    color: #6C7A89;
+    cursor: help;
+}
+
+.submitted-week {
+    background-color: #f8fafc;
+    position: relative;
+}
+
+.submitted-week::after {
+    content: 'Submitted';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px;
+    color: #6C7A89;
+    opacity: 0.5;
+}
