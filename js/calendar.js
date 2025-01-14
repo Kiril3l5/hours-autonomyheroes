@@ -4,6 +4,7 @@ class TimeTrackingCalendar {
         this.currentDate = new Date();
         this.timeEntries = {};
         this.submittedWeeks = {};
+		this.currentWeekDates = getWeekDates(new Date());
         
         // Initialize elements
         this.calendarEl = document.getElementById('calendar');
@@ -60,83 +61,82 @@ class TimeTrackingCalendar {
     }
 
     updateWeekSummary() {
-        const weekDates = getWeekDates(new Date());
-        const weekNumber = getWeekNumber(new Date());
-        
-        // Calculate total hours directly from entries
-        let totalHours = weekDates.reduce((total, date) => {
-            const entry = this.timeEntries[date.toISOString()];
-            return total + (entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0);
-        }, 0);
+    // Get current week dates and number
+    this.currentWeekDates = getWeekDates(new Date());
+    const weekNumber = getWeekNumber(new Date());
+    
+    // Calculate total hours directly from entries
+    let totalHours = this.currentWeekDates.reduce((total, date) => {
+        const dateKey = date.toISOString();
+        const entry = this.timeEntries[dateKey];
+        const hours = entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0;
+        console.log(`Date: ${date.toDateString()}, Hours: ${hours}`); // Debug log
+        return total + hours;
+    }, 0);
 
-        console.log('Current entries:', this.timeEntries); // Debug log
-        console.log('Total hours calculated:', totalHours); // Debug log
+    console.log('Total hours calculated:', totalHours); // Debug log
+    
+    let summaryHtml = '<div class="week-details">';
+    
+    this.currentWeekDates.forEach(date => {
+        const dateKey = date.toISOString();
+        const entry = this.timeEntries[dateKey];
         
-        let summaryHtml = '<div class="week-details">';
+        const isToday = date.toDateString() === new Date().toDateString();
+        const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
         
-        weekDates.forEach(date => {
-            const dateKey = date.toISOString();
-            const entry = this.timeEntries[dateKey];
-            
-            const isToday = date.toDateString() === new Date().toDateString();
-            const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
-            
-            let statusHtml = 'No Entry';
-            let statusStyle = 'color: #6C7A89;';
-            
-            if (entry) {
-                console.log('Entry for', date.toLocaleDateString(), ':', entry); // Debug log
-                if (entry.isTimeOff) {
-                    statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
-                    statusStyle = 'color: #dc2626;';
-                } else {
-                    statusHtml = `${entry.hours}h`;
-                    statusStyle = entry.hours > 8 ? 'color: #ff8d00;' : 'color: #059669;';
-                }
+        let statusHtml = 'No Entry';
+        let statusStyle = 'color: #6C7A89;';
+        
+        if (entry) {
+            if (entry.isTimeOff) {
+                statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
+                statusStyle = 'color: #dc2626;';
+            } else {
+                statusHtml = `${entry.hours}h`;
+                statusStyle = entry.hours > 8 ? 'color: #ff8d00;' : 'color: #059669;';
             }
-            
-            summaryHtml += `
-                <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
-                    <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
-                    <span style="${statusStyle}">${statusHtml}</span>
-                </div>
-            `;
-        });
+        }
         
-        summaryHtml += '</div>';
-        
-        // Add total hours and status
-        summaryHtml = `
-            <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px;">
-                Total Hours: ${totalHours}h
+        summaryHtml += `
+            <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
+                <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+                <span style="${statusStyle}">${statusHtml}</span>
             </div>
-            ${summaryHtml}
         `;
-        
-        // Add warning if needed
-        if (totalHours < 40 && !this.submittedWeeks[weekNumber]) {
-            summaryHtml += `
-                <div style="text-align: center; color: #dc2626; margin-top: 16px;">
-                    ${40 - totalHours}h remaining to reach 40h week
-                </div>
-            `;
-        }
-        
-        // Update the summary element
-        this.summaryEl.innerHTML = summaryHtml;
-        
-        // Update submit button
-        const submitBtn = document.getElementById('submitWeek');
-        if (this.submittedWeeks[weekNumber]) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            submitBtn.textContent = 'Week Submitted';
-        } else {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '1';
-            submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
-        }
+    });
+    
+    // Add total hours and status
+    summaryHtml = `
+        <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px; text-align: center;">
+            Week ${weekNumber} Total: ${totalHours}h
+        </div>
+        ${summaryHtml}
+    `;
+    
+    // Add warning if needed
+    if (totalHours < 40 && !this.submittedWeeks[weekNumber]) {
+        summaryHtml += `
+            <div style="text-align: center; color: #dc2626; margin-top: 16px;">
+                ${40 - totalHours}h remaining to reach 40h week
+            </div>
+        `;
     }
+    
+    this.summaryEl.innerHTML = summaryHtml;
+
+    // Update submit button
+    const submitBtn = document.getElementById('submitWeek');
+    if (this.submittedWeeks[weekNumber]) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.textContent = 'Week Submitted';
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
+    }
+}
 	
 	render() {
         // Update month display

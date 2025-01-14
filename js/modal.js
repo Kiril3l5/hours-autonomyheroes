@@ -60,33 +60,21 @@ class TimeEntryModal {
         document.getElementById('shortDayApproval').style.display = hours < 8 ? 'block' : 'none';
     }
 
-    save() {
+save() {
     const hours = Number(this.hoursInput.value);
     const isTimeOff = this.timeOffCheck.checked;
 
-    // If hours is 0, simply clear the entry without confirmation
+    // If hours is 0, clear the entry
     if (hours === 0) {
-        console.log('Clearing entry'); // Debug log
+        console.log('Clearing entry for:', this.selectedDate.toISOString());
         this.onSave(this.selectedDate, null);
         this.close();
         return;
     }
 
-    // Validate non-zero entries
-    if (!isTimeOff) {
-        if (hours < 8 && !this.shortDayApprovedCheck.checked) {
-            alert('Please confirm manager awareness for less than 8 hours');
-            return;
-        }
-        if (hours > 8 && !this.overtimeApprovedCheck.checked) {
-            alert('Please confirm overtime approval');
-            return;
-        }
-    }
-
     // Create entry object
     const entry = {
-        hours: isTimeOff ? 0 : Number(hours), // Ensure hours is a number
+        hours: isTimeOff ? 0 : Number(hours),
         isTimeOff,
         managerApproved: isTimeOff && this.managerApprovedCheck.checked,
         overtimeApproved: hours > 8 && this.overtimeApprovedCheck.checked,
@@ -94,7 +82,7 @@ class TimeEntryModal {
         timestamp: new Date().toISOString()
     };
 
-    console.log('Saving entry:', entry); // Debug log
+    console.log('Saving entry:', entry, 'for date:', this.selectedDate.toISOString());
     
     // Call save callback
     this.onSave(this.selectedDate, entry);
