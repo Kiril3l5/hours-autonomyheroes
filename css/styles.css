@@ -271,6 +271,60 @@ body {
     background: #e67e00;
 }
 
+/* Add to your styles.css */
+.modal .form-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    /* Reset any potential interference with checkbox appearance */
+    -webkit-appearance: checkbox;
+    -moz-appearance: checkbox;
+    appearance: checkbox;
+    /* Ensure visibility */
+    opacity: 1;
+    position: static;
+    pointer-events: auto;
+}
+
+/* Style the checkbox container for better alignment */
+.modal .form-group label,
+.modal .checkbox-group label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+/* Make sure text aligns with checkbox */
+.modal .form-group label span,
+.modal .checkbox-group label span {
+    margin-top: -2px;
+}
+
+/* Ensure checkbox groups show their checkboxes */
+.modal .checkbox-group {
+    background: #fff4e6;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 8px;
+}
+
+.modal .checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    /* Reset any potential interference */
+    -webkit-appearance: checkbox;
+    -moz-appearance: checkbox;
+    appearance: checkbox;
+    /* Ensure visibility */
+    opacity: 1;
+    position: static;
+    pointer-events: auto;
+}
+
 .modal {
     display: none;
     position: fixed;

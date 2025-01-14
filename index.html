@@ -129,14 +129,14 @@ featured_image: /images/demo/home.jpg
             <h2 id="modalDate"></h2>
             
             <div class="form-group">
-                <label>
-                    <input type="checkbox" id="timeOffCheck">
+                <label for="timeOffCheck">
+                    <input type="checkbox" id="timeOffCheck" name="timeOff">
                     <span>Time off request</span>
                 </label>
                 
                 <div id="timeOffApproval" class="checkbox-group" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="managerApprovedCheck">
+                    <label for="managerApprovedCheck">
+                        <input type="checkbox" id="managerApprovedCheck" name="managerApproved">
                         <span>Time off was requested in advance and approved by manager</span>
                     </label>
                 </div>
@@ -145,27 +145,27 @@ featured_image: /images/demo/home.jpg
             <div id="hoursSection">
                 <div class="form-group">
                     <label for="hoursInput">Hours Worked</label>
-                    <input type="number" id="hoursInput" value="8" min="0" max="24">
+                    <input type="number" id="hoursInput" name="hours" value="8" min="0" max="24">
                 </div>
 
                 <div id="overtimeApproval" class="checkbox-group" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="overtimeApprovedCheck">
+                    <label for="overtimeApprovedCheck">
+                        <input type="checkbox" id="overtimeApprovedCheck" name="overtimeApproved">
                         <span>Overtime was approved by manager</span>
                     </label>
                 </div>
 
                 <div id="shortDayApproval" class="checkbox-group" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="shortDayApprovedCheck">
+                    <label for="shortDayApprovedCheck">
+                        <input type="checkbox" id="shortDayApprovedCheck" name="shortDayApproved">
                         <span>Manager is aware of less than 8h work day</span>
                     </label>
                 </div>
             </div>
 
             <div class="actions">
-                <button id="cancelEntry" class="btn btn-secondary">Cancel</button>
-                <button id="saveEntry" class="btn">Save</button>
+                <button type="button" id="cancelEntry" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="saveEntry" class="btn">Save</button>
             </div>
         </div>
     </div>
