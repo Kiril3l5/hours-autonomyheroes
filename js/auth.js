@@ -18,65 +18,84 @@ class AuthManager {
         this.auth = firebase.auth();
         this.db = firebase.firestore();
 
-        // Add error display
-        this.errorDiv = document.createElement('div');
-        this.errorDiv.style.color = '#dc2626';
-        this.errorDiv.style.marginTop = '10px';
-        this.errorDiv.style.textAlign = 'center';
-        document.getElementById('loginForm').appendChild(this.errorDiv.cloneNode(true));
-        document.getElementById('registerForm').appendChild(this.errorDiv.cloneNode(true));
-
         this.bindEvents();
         this.initAuthStateObserver();
     }
 
-    showError(message, formId) {
-        const errorDiv = document.querySelector(`#${formId} div[style*="color: #dc2626"]`);
-        errorDiv.textContent = message;
-        setTimeout(() => {
-            errorDiv.textContent = '';
-        }, 5000);
+    initAuthStateObserver() {
+        this.auth.onAuthStateChanged((user) => {
+            const authContainer = document.getElementById('authContainer');
+            const calendarContainer = document.getElementById('calendarContainer');
+
+            if (user) {
+                // User is signed in
+                authContainer.classList.remove('active');
+                calendarContainer.classList.add('active');
+                document.getElementById('userEmail').textContent = user.email;
+
+                // Initialize calendar if not already initialized
+                if (!window.calendar) {
+                    setTimeout(() => {
+                        window.calendar = new TimeTrackingCalendar();
+                    }, 100);
+                }
+            } else {
+                // User is signed out
+                authContainer.classList.add('active');
+                calendarContainer.classList.remove('active');
+                document.getElementById('userEmail').textContent = '';
+                window.calendar = null;
+                // Clear previous user's data from view
+                const calendarEl = document.getElementById('calendar');
+                if (calendarEl) {
+                    while (calendarEl.children.length > 7) {
+                        calendarEl.removeChild(calendarEl.lastChild);
+                    }
+                }
+            }
+        });
     }
 
     bindEvents() {
         // Tab switching
-        document.getElementById('loginTab').addEventListener('click', () => this.switchTab('login'));
-        document.getElementById('registerTab').addEventListener('click', () => this.switchTab('register'));
+        document.getElementById('loginTab').addEventListener('click', () => {
+            document.getElementById('loginTab').classList.add('active');
+            document.getElementById('registerTab').classList.remove('active');
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('registerForm').classList.remove('active');
+        });
 
-        // Form submissions with error checking
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
+        document.getElementById('registerTab').addEventListener('click', () => {
+            document.getElementById('registerTab').classList.add('active');
+            document.getElementById('loginTab').classList.remove('active');
+            document.getElementById('registerForm').classList.add('active');
+            document.getElementById('loginForm').classList.remove('active');
+        });
 
-        loginForm.addEventListener('submit', async (e) => {
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Login form submitted'); // Debug log
-            
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
 
             try {
-                const userCredential = await this.auth.signInWithEmailAndPassword(email, password);
-                console.log('Login successful:', userCredential.user.email); // Debug log
+                await this.auth.signInWithEmailAndPassword(email, password);
+                // Success is handled by the auth state observer
             } catch (error) {
-                console.error('Login error:', error); // Debug log
-                this.showError(error.message, 'loginForm');
+                alert(error.message);
             }
         });
 
-        registerForm.addEventListener('submit', async (e) => {
+        // Register form
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Register form submitted'); // Debug log
-
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
             const firstName = document.getElementById('regFirstName').value;
             const lastName = document.getElementById('regLastName').value;
 
             try {
-                console.log('Creating user with email:', email); // Debug log
                 const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
-                console.log('User created:', userCredential.user.uid); // Debug log
-
                 // Add user profile to Firestore
                 await this.db.collection('users').doc(userCredential.user.uid).set({
                     firstName,
@@ -84,91 +103,23 @@ class AuthManager {
                     email,
                     createdAt: new Date().toISOString()
                 });
-                console.log('User profile created in Firestore'); // Debug log
+                // Success is handled by the auth state observer
             } catch (error) {
-                console.error('Registration error:', error); // Debug log
-                this.showError(error.message, 'registerForm');
+                alert(error.message);
             }
         });
 
-        // Logout handler
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => this.logout());
-        }
-    }
-	
-	firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        // User is signed in
-        if (!window.calendar) {
-            window.calendar = new TimeTrackingCalendar();
-        }
-    } else {
-        // User is signed out
-        window.calendar = null;
-        // Clear any existing calendar data
-        document.getElementById('calendarContainer').classList.remove('active');
-    }
-});
-
-    initAuthStateObserver() {
-        this.auth.onAuthStateChanged((user) => {
-            console.log('Auth state changed:', user ? user.email : 'signed out'); // Debug log
-            
-            const authContainer = document.getElementById('authContainer');
-            const calendarContainer = document.getElementById('calendarContainer');
-            const userEmailSpan = document.getElementById('userEmail');
-
-            if (user) {
-                authContainer.classList.remove('active');
-                calendarContainer.classList.add('active');
-                userEmailSpan.textContent = user.email;
-                
-                if (!window.calendar) {
-                    window.calendar = new TimeTrackingCalendar();
-                }
-            } else {
-                authContainer.classList.add('active');
-                calendarContainer.classList.remove('active');
-                userEmailSpan.textContent = '';
-                window.calendar = null;
-            }
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            this.auth.signOut().catch(error => {
+                console.error('Logout error:', error);
+                alert(error.message);
+            });
         });
-    }
-
-    switchTab(tab) {
-        const loginTab = document.getElementById('loginTab');
-        const registerTab = document.getElementById('registerTab');
-        const loginForm = document.getElementById('loginForm');
-        const registerForm = document.getElementById('registerForm');
-
-        if (tab === 'login') {
-            loginTab.classList.add('active');
-            registerTab.classList.remove('active');
-            loginForm.classList.add('active');
-            registerForm.classList.remove('active');
-        } else {
-            registerTab.classList.add('active');
-            loginTab.classList.remove('active');
-            registerForm.classList.add('active');
-            loginForm.classList.remove('active');
-        }
-    }
-
-    async logout() {
-        try {
-            await this.auth.signOut();
-            console.log('User signed out successfully'); // Debug log
-        } catch (error) {
-            console.error('Logout error:', error); // Debug log
-            alert('Error signing out: ' + error.message);
-        }
     }
 }
 
 // Initialize auth manager when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Initializing AuthManager'); // Debug log
     window.authManager = new AuthManager();
 });
