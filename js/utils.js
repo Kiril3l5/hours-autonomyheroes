@@ -9,9 +9,9 @@ function getFirstDayOfMonth(year, month) {
 
 function checkIfCurrentWeek(date) {
     const now = new Date();
-    const mondayOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1));
-    const sundayOfWeek = new Date(now.setDate(mondayOfWeek.getDate() + 6));
-    return date >= mondayOfWeek && date <= sundayOfWeek;
+    const weekStart = new Date(now.setDate(now.getDate() - now.getDay() + 1));
+    const weekEnd = new Date(now.setDate(weekStart.getDate() + 6));
+    return date >= weekStart && date <= weekEnd;
 }
 
 function checkIfPastWeek(date) {
@@ -28,26 +28,8 @@ function getWeekNumber(date) {
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
-function formatDate(date) {
-    return date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-}
-
-function calculateWeekTotal(timeEntries, weekDates) {
-    return weekDates.reduce((total, date) => {
-        const entry = timeEntries[date.toISOString()];
-        // Only add hours if there's an entry, it's not time off, and hours is a valid number
-        return total + (entry && !entry.isTimeOff ? Number(entry.hours) || 0 : 0);
-    }, 0);
-}
-
 function getWeekDates(date) {
     const mondayOfWeek = new Date(date);
-    // Adjust to Monday (1) from Sunday (0)
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
     mondayOfWeek.setDate(diff);
@@ -59,4 +41,13 @@ function getWeekDates(date) {
         weekDates.push(currentDate);
     }
     return weekDates;
+}
+
+function formatDate(date) {
+    return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 }
