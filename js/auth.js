@@ -23,38 +23,32 @@ class AuthManager {
     }
 
     initAuthStateObserver() {
-        this.auth.onAuthStateChanged((user) => {
-            const authContainer = document.getElementById('authContainer');
-            const calendarContainer = document.getElementById('calendarContainer');
+    this.auth.onAuthStateChanged((user) => {
+        const authContainer = document.getElementById('authContainer');
+        const calendarContainer = document.getElementById('calendarContainer');
 
-            if (user) {
-                // User is signed in
-                authContainer.classList.remove('active');
-                calendarContainer.classList.add('active');
-                document.getElementById('userEmail').textContent = user.email;
+        if (user) {
+            // User is signed in
+            console.log('User signed in:', user.uid); // Debug log
+            authContainer.classList.remove('active');
+            calendarContainer.classList.add('active');
+            document.getElementById('userEmail').textContent = user.email;
 
-                // Initialize calendar if not already initialized
+            // Initialize calendar with a slight delay to ensure auth is complete
+            setTimeout(() => {
                 if (!window.calendar) {
-                    setTimeout(() => {
-                        window.calendar = new TimeTrackingCalendar();
-                    }, 100);
+                    window.calendar = new TimeTrackingCalendar();
                 }
-            } else {
-                // User is signed out
-                authContainer.classList.add('active');
-                calendarContainer.classList.remove('active');
-                document.getElementById('userEmail').textContent = '';
-                window.calendar = null;
-                // Clear previous user's data from view
-                const calendarEl = document.getElementById('calendar');
-                if (calendarEl) {
-                    while (calendarEl.children.length > 7) {
-                        calendarEl.removeChild(calendarEl.lastChild);
-                    }
-                }
-            }
-        });
-    }
+            }, 100);
+        } else {
+            // User is signed out
+            authContainer.classList.add('active');
+            calendarContainer.classList.remove('active');
+            document.getElementById('userEmail').textContent = '';
+            window.calendar = null;
+        }
+    });
+}
 
     bindEvents() {
         // Tab switching

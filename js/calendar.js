@@ -1,10 +1,17 @@
 // calendar.js
 class TimeTrackingCalendar {
     constructor() {
-        if (!firebase.auth().currentUser) {
-            console.error('No user logged in');
-            return;
-        }
+        const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        console.error('No user logged in');
+        return;
+    }
+    console.log('Initializing calendar for user:', currentUser.uid);
+
+    this.currentDate = new Date();
+    this.timeEntries = {};
+    this.submittedWeeks = {};
+    this.userId = currentUser.uid;
 
         this.currentDate = new Date();
         this.timeEntries = {};
@@ -54,8 +61,14 @@ class TimeTrackingCalendar {
     }
 
     handleTimeEntry(date, entry) {
-    const dateKey = date.toISOString();
-    console.log('Saving entry for date:', date.toLocaleDateString(), 'Entry:', entry);
+    // Normalize the date to midnight UTC
+    const normalizedDate = new Date(Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+    ));
+    const dateKey = normalizedDate.toISOString();
+    console.log('Handling time entry for:', dateKey, entry);
 
     if (entry === null) {
         delete this.timeEntries[dateKey];
@@ -254,9 +267,20 @@ class TimeTrackingCalendar {
     }
 
     async submitWeek() {
+     const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        console.error('No user logged in');
+        alert('Please log in to submit hours');
+        return;
+    }
+    console.log('Submitting week for user:', currentUser.uid);
+
     const weekNumber = getWeekNumber(new Date());
     const year = new Date().getFullYear();
     const weekId = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+    const docId = `${currentUser.uid}_${weekId}`; // Use currentUser.uid instead of this.userId
+    
+    console.log('Document ID:', docId); // Debug log
     
     try {
         // Check if week is already submitted
@@ -305,15 +329,17 @@ class TimeTrackingCalendar {
         if (confirmed) {
             // Create timeEntry document
             const timeEntry = {
-                workerId: this.userId,
+                workerId: currentUser.uid,
                 week: weekId,
                 hours: hoursArray,
                 totalHours: totalHours,
                 status: 'pending_approval',
                 approvedBy: null,
-                submittedAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                submittedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
+			
+			console.log('Submitting entry:', timeEntry); // Debug log
 
             // Save to Firestore
             await firebase.firestore().collection('timeEntries').doc(docId).set(timeEntry);
@@ -334,12 +360,26 @@ class TimeTrackingCalendar {
         }
     }
 }
+
+async verifyAuth() {
+    const currentUser = firebase.auth().currentUser;
+    if (!currentUser) {
+        throw new Error('No user logged in');
+    }
+    return currentUser;
+}
+
 async loadSubmittedEntries() {
     try {
+        const user = await this.verifyAuth();
         const snapshot = await firebase.firestore()
             .collection('timeEntries')
-            .where('workerId', '==', this.userId)
+            .where('workerId', '==', user.uid)
             .get();
+
+        console.log('Loaded entries:', snapshot.size); // Debug log
+
+        snapshot.forEach(doc => {
 
         snapshot.forEach(doc => {
             const data = doc.data();
