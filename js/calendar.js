@@ -1,24 +1,18 @@
 // calendar.js
-window.TimeTrackingCalendar = class TimeTrackingCalendar {
 class TimeTrackingCalendar {
     constructor() {
         const currentUser = firebase.auth().currentUser;
-    if (!currentUser) {
-        console.error('No user logged in');
-        return;
-    }
-    console.log('Initializing calendar for user:', currentUser.uid);
-
-    this.currentDate = new Date();
-    this.timeEntries = {};
-    this.submittedWeeks = {};
-    this.userId = currentUser.uid;
+        if (!currentUser) {
+            console.error('No user logged in');
+            return;
+        }
+        console.log('Initializing calendar for user:', currentUser.uid);
 
         this.currentDate = new Date();
         this.timeEntries = {};
         this.submittedWeeks = {};
-        this.userId = firebase.auth().currentUser.uid;
-        
+        this.userId = currentUser.uid;
+
         // Initialize elements
         this.calendarEl = document.getElementById('calendar');
         this.summaryEl = document.getElementById('weekSummary');
@@ -285,7 +279,6 @@ class TimeTrackingCalendar {
     
     try {
         // Check if week is already submitted
-        const docId = `${this.userId}_${weekId}`;
         const existingSubmission = await firebase.firestore()
             .collection('timeEntries')
             .doc(docId)
@@ -378,9 +371,7 @@ async loadSubmittedEntries() {
             .where('workerId', '==', user.uid)
             .get();
 
-        console.log('Loaded entries:', snapshot.size); // Debug log
-
-        snapshot.forEach(doc => {
+        console.log('Loaded entries:', snapshot.size);
 
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -406,4 +397,6 @@ async loadSubmittedEntries() {
     }
 }
 }
+}
+// Make it globally available at the END of the file
 window.TimeTrackingCalendar = TimeTrackingCalendar;
