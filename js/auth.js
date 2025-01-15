@@ -1,4 +1,5 @@
 // auth.js
+(function() { // Add IIFE
 class AuthManager {
     constructor() {
         // Initialize Firebase
@@ -34,32 +35,40 @@ class AuthManager {
             calendarContainer.classList.add('active');
             document.getElementById('userEmail').textContent = user.email;
 
-            // Add more robust checking for TimeTrackingCalendar
-            const initCalendar = () => {
-                if (window.TimeTrackingCalendar) {
-                    console.log('Initializing calendar...');
-                    if (!window.calendar) {
-                        window.calendar = new TimeTrackingCalendar();
-                    }
-                } else {
-                    console.error('TimeTrackingCalendar not loaded, retrying...');
-                    setTimeout(initCalendar, 100); // retry after 100ms
-                }
-            };
+            // Check for TimeTrackingCalendar with retries
+                    let retryCount = 0;
+                    const maxRetries = 10;
 
-            // Start initialization attempt
-            initCalendar();
-        } else {
-            // User is signed out
-            console.log('User signed out');
-            authContainer.classList.add('active');
-            calendarContainer.classList.remove('active');
-            document.getElementById('userEmail').textContent = '';
-            if (window.calendar) {
-                window.calendar = null;
-            }
+                    const initCalendar = () => {
+                        if (window.TimeTrackingCalendar) {
+                            console.log('Calendar found, initializing...');
+                            if (!window.calendar) {
+                                window.calendar = new TimeTrackingCalendar();
+                            }
+                        } else {
+                            retryCount++;
+                            if (retryCount < maxRetries) {
+                                console.log(`Retry ${retryCount} of ${maxRetries}`);
+                                setTimeout(initCalendar, 100);
+                            } else {
+                                console.error('Failed to load TimeTrackingCalendar after max retries');
+                            }
+                        }
+                    };
+
+                    initCalendar();
+                } else {
+                    console.log('User signed out');
+                    authContainer.classList.add('active');
+                    calendarContainer.classList.remove('active');
+                    document.getElementById('userEmail').textContent = '';
+                    if (window.calendar) {
+                        window.calendar = null;
+                    }
+                }
+            });
         }
-    });
+    };
 }
 
     bindEvents() {
@@ -132,6 +141,11 @@ class AuthManager {
 }
 
 // Initialize auth manager when the page loads
-document.addEventListener('DOMContentLoaded', () => {
-    window.authManager = new AuthManager();
-});
+    if (typeof window !== 'undefined') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.authManager) {
+                window.authManager = new AuthManager();
+            }
+        });
+    }
+})();

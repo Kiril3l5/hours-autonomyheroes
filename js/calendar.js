@@ -1,46 +1,47 @@
 // calendar.js
-class TimeTrackingCalendar {
-    constructor() {
-        const currentUser = firebase.auth().currentUser;
-        if (!currentUser) {
-            console.error('No user logged in');
-            return;
+(function() { // Add IIFE to avoid global scope pollution
+    class TimeTrackingCalendar {
+        constructor() {
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                console.error('No user logged in');
+                return;
+            }
+            console.log('Initializing calendar for user:', currentUser.uid);
+
+            this.currentDate = new Date();
+            this.timeEntries = {};
+            this.submittedWeeks = {};
+            this.userId = currentUser.uid;
+            
+            // Initialize elements
+            this.calendarEl = document.getElementById('calendar');
+            this.summaryEl = document.getElementById('weekSummary');
+            
+            // Create modal with callback to handle updates
+            this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
+
+            // Add event listeners
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+                this.render();
+            });
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+                this.render();
+            });
+            
+            document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
+
+            // Load saved data
+            this.loadSavedData();
+            this.loadSubmittedEntries();
+            
+            // Initial render
+            this.render();
+            this.updateWeekSummary();
         }
-        console.log('Initializing calendar for user:', currentUser.uid);
-
-        this.currentDate = new Date();
-        this.timeEntries = {};
-        this.submittedWeeks = {};
-        this.userId = currentUser.uid;
-
-        // Initialize elements
-        this.calendarEl = document.getElementById('calendar');
-        this.summaryEl = document.getElementById('weekSummary');
-        
-        // Create modal with callback to handle updates
-        this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
-
-        // Add event listeners
-        document.getElementById('prevMonth').addEventListener('click', () => {
-            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
-            this.render();
-        });
-        
-        document.getElementById('nextMonth').addEventListener('click', () => {
-            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
-            this.render();
-        });
-        
-        document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
-
-        // Load saved data
-        this.loadSavedData();
-		this.loadSubmittedEntries();
-        
-        // Initial render
-        this.render();
-        this.updateWeekSummary();
-    }
 
     loadSavedData() {
         const savedEntries = localStorage.getItem(`timeEntries_${this.userId}`);
@@ -398,5 +399,9 @@ async loadSubmittedEntries() {
 }
 }
 }
-// Make it globally available at the END of the file
-window.TimeTrackingCalendar = TimeTrackingCalendar;
+// Make TimeTrackingCalendar available globally
+    if (typeof window !== 'undefined') {
+        window.TimeTrackingCalendar = TimeTrackingCalendar;
+        console.log('TimeTrackingCalendar registered globally');
+    }
+})();
