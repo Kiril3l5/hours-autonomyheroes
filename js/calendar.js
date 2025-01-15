@@ -1,5 +1,5 @@
 // calendar.js
-(function() { // Add IIFE to avoid global scope pollution
+(function() {
     class TimeTrackingCalendar {
         constructor() {
             const currentUser = firebase.auth().currentUser;
@@ -397,11 +397,7 @@ async loadSubmittedEntries() {
         console.error('Error loading submitted entries:', error);
     }
 }
-}
-}
-// Make TimeTrackingCalendar available globally
-    if (typeof window !== 'undefined') {
-        window.TimeTrackingCalendar = TimeTrackingCalendar;
-        console.log('TimeTrackingCalendar registered globally');
-    }
+
+    // Make it globally available
+    window.TimeTrackingCalendar = TimeTrackingCalendar;
 })();
