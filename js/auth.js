@@ -2,6 +2,8 @@
 (function() {
     class AuthManager {
         constructor() {
+            console.log('Initializing AuthManager...');
+            
             // Initialize Firebase
             const firebaseConfig = {
                 apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
@@ -19,8 +21,39 @@
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
-            this.bindEvents();
-            this.initAuthStateObserver();
+            // Wait for dependencies before binding events
+            this.waitForDependencies()
+                .then(() => {
+                    console.log('Dependencies loaded, binding events...');
+                    this.bindEvents();
+                    this.initAuthStateObserver();
+                })
+                .catch(error => {
+                    console.error('Failed to load dependencies:', error);
+                });
+        }
+
+        async waitForDependencies() {
+            return new Promise((resolve, reject) => {
+                let attempts = 0;
+                const maxAttempts = 20;
+                const interval = 100; // 100ms between attempts
+
+                const checkDependencies = () => {
+                    console.log('Checking dependencies...', attempts);
+                    if (window.TimeTrackingCalendar) {
+                        console.log('Dependencies found!');
+                        resolve();
+                    } else if (attempts >= maxAttempts) {
+                        reject(new Error('Dependencies failed to load'));
+                    } else {
+                        attempts++;
+                        setTimeout(checkDependencies, interval);
+                    }
+                };
+
+                checkDependencies();
+            });
         }
 
         initAuthStateObserver() {
@@ -34,25 +67,14 @@
                     calendarContainer.classList.add('active');
                     document.getElementById('userEmail').textContent = user.email;
 
-                    let retryCount = 0;
-                    const maxRetries = 10;
-
-                    const initCalendar = () => {
-                        if (window.TimeTrackingCalendar) {
-                            console.log('Calendar found, initializing...');
-                            if (!window.calendar) {
-                                window.calendar = new TimeTrackingCalendar();
-                            }
-                        } else if (retryCount < maxRetries) {
-                            console.log(`Retry ${retryCount + 1} of ${maxRetries}`);
-                            retryCount++;
-                            setTimeout(initCalendar, 100);
-                        } else {
-                            console.error('Failed to load TimeTrackingCalendar after max retries');
+                    if (window.TimeTrackingCalendar) {
+                        console.log('Initializing calendar...');
+                        if (!window.calendar) {
+                            window.calendar = new TimeTrackingCalendar();
                         }
-                    };
-
-                    initCalendar();
+                    } else {
+                        console.error('TimeTrackingCalendar not available');
+                    }
                 } else {
                     console.log('User signed out');
                     authContainer.classList.add('active');
@@ -134,8 +156,11 @@
     }
 }
 
-    // Initialize auth manager when the page loads
-    document.addEventListener('DOMContentLoaded', () => {
-        window.authManager = new AuthManager();
+ // Initialize auth manager when everything is loaded
+    window.addEventListener('load', () => {
+        console.log('Window loaded, checking TimeTrackingCalendar:', !!window.TimeTrackingCalendar);
+        if (!window.authManager) {
+            window.authManager = new AuthManager();
+        }
     });
 })();

@@ -398,6 +398,7 @@ async loadSubmittedEntries() {
     }
 }
 
-    // Make it globally available
+  // Make it globally available
     window.TimeTrackingCalendar = TimeTrackingCalendar;
+    console.log('TimeTrackingCalendar loaded and registered');
 })();
