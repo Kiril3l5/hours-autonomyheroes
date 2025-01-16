@@ -176,14 +176,20 @@ featured_image: /images/demo/home.jpg
     <script src="js/calendar.js"></script>
     <script src="js/auth.js"></script>
     <script>
-        // Initialize auth manager when TimeTrackingCalendar is available
-        window.addEventListener('load', () => {
-            if (!window.authManager && window.TimeTrackingCalendar) {
-                window.authManager = new AuthManager();
+    // Wait for both DOM and scripts to be loaded
+    window.addEventListener('load', () => {
+        // Small delay to ensure all scripts are properly initialized
+        setTimeout(() => {
+            if (window.TimeTrackingCalendar) {
+                if (!window.authManager) {
+                    console.log('Initializing AuthManager...');
+                    window.authManager = new AuthManager();
+                }
             } else {
-                console.error('Required dependencies not available');
+                console.error('TimeTrackingCalendar not available');
             }
-        });
-    </script>
+        }, 100);
+    });
+</script>
 </body>
 </html>

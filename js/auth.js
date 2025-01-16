@@ -1,6 +1,4 @@
 // auth.js
-this.auth.onAuthStateChanged((user) => {
-    try {
 (function() {
     class AuthManager {
         constructor() {
@@ -23,16 +21,18 @@ this.auth.onAuthStateChanged((user) => {
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
-            // Wait for dependencies before binding events
-            this.waitForDependencies()
-                .then(() => {
-                    console.log('Dependencies loaded, binding events...');
-                    this.bindEvents();
-                    this.initAuthStateObserver();
-                })
-                .catch(error => {
-                    console.error('Failed to load dependencies:', error);
-                });
+            this.initializeManager();
+        }
+
+        async initializeManager() {
+            try {
+                await this.waitForDependencies();
+                console.log('Dependencies loaded, binding events...');
+                this.bindEvents();
+                this.initAuthStateObserver();
+            } catch (error) {
+                console.error('Failed to load dependencies:', error);
+            }
         }
 
         async waitForDependencies() {
@@ -164,14 +164,10 @@ this.auth.onAuthStateChanged((user) => {
 }
 
  // Initialize auth manager when everything is loaded
-    window.addEventListener('load', () => {
-        console.log('Window loaded, checking TimeTrackingCalendar:', !!window.TimeTrackingCalendar);
+    window.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, initializing AuthManager...');
         if (!window.authManager) {
             window.authManager = new AuthManager();
         }
     });
 })();
- } catch (error) {
-        console.error('Auth state change error:', error);
-    }
-});

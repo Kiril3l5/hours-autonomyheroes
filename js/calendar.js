@@ -1,8 +1,10 @@
 // calendar.js
-console.log('TimeTrackingCalendar initialization starting...');
 (function() {
+    console.log('TimeTrackingCalendar initialization starting...');
+    
     class TimeTrackingCalendar {
         constructor() {
+            console.log('TimeTrackingCalendar constructor called');
             const currentUser = firebase.auth().currentUser;
             if (!currentUser) {
                 console.error('No user logged in');
@@ -410,7 +412,6 @@ async loadSubmittedEntries() {
     }
 }
 
-  // Make it globally available
-    window.TimeTrackingCalendar = TimeTrackingCalendar;
+window.TimeTrackingCalendar = TimeTrackingCalendar;
     console.log('TimeTrackingCalendar loaded and registered');
 })();
