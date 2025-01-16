@@ -2,27 +2,11 @@
 (function() {
     class AuthManager {
         constructor() {
-            console.log('Initializing AuthManager...');
-            
-            // Initialize Firebase
-            const firebaseConfig = {
-                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-                authDomain: "autonomy-heroes.firebaseapp.com",
-                projectId: "autonomy-heroes",
-                storageBucket: "autonomy-heroes.firebasestorage.app",
-                messagingSenderId: "266526530869",
-                appId: "1:266526530869:web:ea95143735be497ca8007c"
-            };
-
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
-
-            this.auth = firebase.auth();
-            this.db = firebase.firestore();
-
-            this.initializeManager();
-        }
+        console.log('Initializing AuthManager...');
+        this.auth = firebase.auth();
+        this.db = firebase.firestore();
+        this.initializeManager();
+    }
 
         async initializeManager() {
             try {

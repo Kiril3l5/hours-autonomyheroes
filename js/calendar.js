@@ -1,7 +1,5 @@
 // calendar.js
 (function() {
-    console.log('TimeTrackingCalendar initialization starting...');
-    
     class TimeTrackingCalendar {
         constructor() {
             console.log('TimeTrackingCalendar constructor called');
@@ -10,13 +8,19 @@
                 console.error('No user logged in');
                 return;
             }
-            console.log('Initializing calendar for user:', currentUser.uid);
-
+            
+            // Initialize properties
             this.currentDate = new Date();
             this.timeEntries = {};
             this.submittedWeeks = {};
             this.userId = currentUser.uid;
             
+            // Rest of initialization
+            this.initializeCalendar();
+            console.log('TimeTrackingCalendar initialization complete');
+        }
+
+        initializeCalendar() {
             // Initialize elements
             this.calendarEl = document.getElementById('calendar');
             this.summaryEl = document.getElementById('weekSummary');
@@ -45,7 +49,6 @@
             this.render();
             this.updateWeekSummary();
         }
-		console.log('TimeTrackingCalendar initialization complete');
 
     loadSavedData() {
         const savedEntries = localStorage.getItem(`timeEntries_${this.userId}`);

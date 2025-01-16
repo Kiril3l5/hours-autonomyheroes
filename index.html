@@ -28,6 +28,48 @@ featured_image: /images/demo/home.jpg
 	<link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
+    <!-- Initialize Firebase and load scripts -->
+<script>
+    if (!window.firebaseInitialized) {
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+            authDomain: "autonomy-heroes.firebaseapp.com",
+            projectId: "autonomy-heroes",
+            storageBucket: "autonomy-heroes.firebasestorage.app",
+            messagingSenderId: "266526530869",
+            appId: "1:266526530869:web:ea95143735be497ca8007c"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        window.firebaseInitialized = true;
+    }
+</script>
+
+<!-- Load dependencies in order -->
+<script src="js/utils.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/auth.js"></script>
+
+<!-- Initialize application -->
+<script>
+    function initializeApp() {
+        if (window.TimeTrackingCalendar && !window.authManager) {
+            console.log('Initializing AuthManager...');
+            window.authManager = new AuthManager();
+        } else {
+            console.warn('Waiting for dependencies...');
+            setTimeout(initializeApp, 100);
+        }
+    }
+
+    // Start initialization when everything is loaded
+    window.addEventListener('load', () => {
+        console.log('Window loaded, starting initialization...');
+        initializeApp();
+    });
+</script>
+
     <!-- Auth Container -->
     <div id="authContainer" class="auth-container active">
         <h1 class="title">Hours Portal</h1>
@@ -108,20 +150,6 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-    <!-- Initialize Firebase first -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-            authDomain: "autonomy-heroes.firebaseapp.com",
-            projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.firebasestorage.app",
-            messagingSenderId: "266526530869",
-            appId: "1:266526530869:web:ea95143735be497ca8007c"
-        };
-        
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-    </script>
 
 <!-- Time Entry Modal -->
     <div id="timeEntryModal" class="modal">
@@ -170,26 +198,6 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
- <!-- Core dependencies -->
-    <script src="js/utils.js"></script>
-    <script src="js/modal.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/auth.js"></script>
-    <script>
-    // Wait for both DOM and scripts to be loaded
-    window.addEventListener('load', () => {
-        // Small delay to ensure all scripts are properly initialized
-        setTimeout(() => {
-            if (window.TimeTrackingCalendar) {
-                if (!window.authManager) {
-                    console.log('Initializing AuthManager...');
-                    window.authManager = new AuthManager();
-                }
-            } else {
-                console.error('TimeTrackingCalendar not available');
-            }
-        }, 100);
-    });
 </script>
 </body>
 </html>
