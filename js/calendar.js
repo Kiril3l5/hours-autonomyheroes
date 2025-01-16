@@ -1,4 +1,5 @@
 // calendar.js
+console.log('TimeTrackingCalendar initialization starting...');
 (function() {
     class TimeTrackingCalendar {
         constructor() {
@@ -42,6 +43,7 @@
             this.render();
             this.updateWeekSummary();
         }
+		console.log('TimeTrackingCalendar initialization complete');
 
     loadSavedData() {
         const savedEntries = localStorage.getItem(`timeEntries_${this.userId}`);
@@ -233,15 +235,25 @@
             // Add entry info if exists
             const entry = this.timeEntries[date.toISOString()];
             if (entry) {
-    const entryDisplay = document.createElement('div');
-    if (this.submittedWeeks[weekNumber]) {
-        // Add locked indicator
-        const lockIndicator = document.createElement('div');
-        lockIndicator.className = 'lock-indicator';
-        lockIndicator.innerHTML = '🔒';
-        lockIndicator.title = 'Week submitted - contact manager for changes';
-        dayEl.appendChild(lockIndicator);
-    }
+                const entryDisplay = document.createElement('div');
+                if (this.submittedWeeks[weekNumber]) {
+                    // Add locked indicator
+                    const lockIndicator = document.createElement('div');
+                    lockIndicator.className = 'lock-indicator';
+                    lockIndicator.innerHTML = '🔒';
+                    lockIndicator.title = 'Week submitted - contact manager for changes';
+                    dayEl.appendChild(lockIndicator);
+                }
+                
+                if (entry.isTimeOff) {
+                    entryDisplay.className = 'hours-display time-off';
+                    entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
+                } else {
+                    entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
+                    entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
+                }
+                dayEl.appendChild(entryDisplay);
+            }
     
     if (entry.isTimeOff) {
         entryDisplay.className = 'hours-display time-off';

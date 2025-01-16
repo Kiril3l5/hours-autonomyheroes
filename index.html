@@ -170,17 +170,20 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-<!-- Add this right before closing </body> tag -->
-<!-- Core dependencies -->
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script>
-    // Add a check to confirm Calendar is loaded
-    window.addEventListener('load', function() {
-        console.log('TimeTrackingCalendar loaded:', !!window.TimeTrackingCalendar);
-    });
-</script>
-<script src="js/auth.js"></script>
+ <!-- Core dependencies -->
+    <script src="js/utils.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Initialize auth manager when TimeTrackingCalendar is available
+        window.addEventListener('load', () => {
+            if (!window.authManager && window.TimeTrackingCalendar) {
+                window.authManager = new AuthManager();
+            } else {
+                console.error('Required dependencies not available');
+            }
+        });
+    </script>
 </body>
 </html>

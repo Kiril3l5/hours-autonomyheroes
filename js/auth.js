@@ -1,4 +1,6 @@
 // auth.js
+this.auth.onAuthStateChanged((user) => {
+    try {
 (function() {
     class AuthManager {
         constructor() {
@@ -35,16 +37,21 @@
 
         async waitForDependencies() {
             return new Promise((resolve, reject) => {
+                if (window.TimeTrackingCalendar) {
+                    resolve();
+                    return;
+                }
+
                 let attempts = 0;
-                const maxAttempts = 20;
-                const interval = 100; // 100ms between attempts
+                const maxAttempts = 50; // Increase max attempts
+                const interval = 100;
 
                 const checkDependencies = () => {
-                    console.log('Checking dependencies...', attempts);
                     if (window.TimeTrackingCalendar) {
-                        console.log('Dependencies found!');
+                        console.log('TimeTrackingCalendar found');
                         resolve();
                     } else if (attempts >= maxAttempts) {
+                        console.error('Dependencies not found after', attempts, 'attempts');
                         reject(new Error('Dependencies failed to load'));
                     } else {
                         attempts++;
@@ -164,3 +171,7 @@
         }
     });
 })();
+ } catch (error) {
+        console.error('Auth state change error:', error);
+    }
+});
