@@ -98,10 +98,12 @@
         }
 
         handleTimeEntry(date, entry) {
+            // Normalize the date to midnight UTC
             const normalizedDate = new Date(Date.UTC(
                 date.getFullYear(),
                 date.getMonth(),
-                date.getDate()
+                date.getDate(),
+                0, 0, 0, 0
             ));
             const dateKey = normalizedDate.toISOString();
             console.log('Handling time entry for:', dateKey, entry);
@@ -118,77 +120,106 @@
                 console.log('Entry saved:', this.timeEntries[dateKey]);
             }
             
-            localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
+            // Save to localStorage
+            try {
+                localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
+                console.log('Entries saved to localStorage');
+            } catch (error) {
+                console.error('Error saving to localStorage:', error);
+            }
             
             this.render();
             this.updateWeekSummary();
         }
 
         render() {
-            document.getElementById('currentMonth').textContent = this.currentDate.toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric' 
-            });
+    // Update month/year display
+    document.getElementById('currentMonth').textContent = this.currentDate.toLocaleDateString('en-US', { 
+        month: 'long', 
+        year: 'numeric' 
+    });
 
-            while (this.calendarEl.children.length > 7) {
-                this.calendarEl.removeChild(this.calendarEl.lastChild);
-            }
+    // Clear existing calendar days while keeping weekday headers
+    while (this.calendarEl.children.length > 7) {
+        this.calendarEl.removeChild(this.calendarEl.lastChild);
+    }
 
-            const year = this.currentDate.getFullYear();
-            const month = this.currentDate.getMonth();
-            const firstDay = getFirstDayOfMonth(year, month);
-            const daysInMonth = getDaysInMonth(year, month);
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    const firstDay = getFirstDayOfMonth(year, month);
+    const daysInMonth = getDaysInMonth(year, month);
+    
+    // Calculate start day (Monday = 0, Sunday = 6)
+    let startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+    // Add empty days before the first day of the month
+    for (let i = 0; i < startDay; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'day empty';
+        this.calendarEl.appendChild(emptyDay);
+    }
+
+    // Add days of the month
+    for (let day = 1; day <= daysInMonth; day++) {
+        // Create local date object
+        const date = new Date(year, month, day);
+        
+        // Create normalized UTC date for consistent lookup
+        const normalizedDate = new Date(Date.UTC(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+            0, 0, 0, 0
+        ));
+        const dateKey = normalizedDate.toISOString();
+        
+        // Create day element
+        const dayEl = document.createElement('div');
+        const isCurrentWeek = checkIfCurrentWeek(date);
+        const isPastWeek = checkIfPastWeek(date);
+        const weekNumber = getWeekNumber(date);
+        
+        dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
+        
+        // Add day number
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = day;
+        dayEl.appendChild(dayNumber);
+
+        // Check for existing entry
+        const entry = this.timeEntries[dateKey];
+        if (entry) {
+            const entryDisplay = document.createElement('div');
             
-            let startDay = firstDay === 0 ? 6 : firstDay - 1;
-
-            for (let i = 0; i < startDay; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.className = 'day empty';
-                this.calendarEl.appendChild(emptyDay);
+            // Show lock indicator if week is submitted
+            if (this.submittedWeeks[weekNumber]) {
+                const lockIndicator = document.createElement('div');
+                lockIndicator.className = 'lock-indicator';
+                lockIndicator.innerHTML = '🔒';
+                lockIndicator.title = 'Week submitted - contact manager for changes';
+                dayEl.appendChild(lockIndicator);
             }
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
-                const dayEl = document.createElement('div');
-                const isCurrentWeek = checkIfCurrentWeek(date);
-                const isPastWeek = checkIfPastWeek(date);
-                const weekNumber = getWeekNumber(date);
-                
-                dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
-                
-                const dayNumber = document.createElement('div');
-                dayNumber.className = 'day-number';
-                dayNumber.textContent = day;
-                dayEl.appendChild(dayNumber);
-
-                const entry = this.timeEntries[date.toISOString()];
-                if (entry) {
-                    const entryDisplay = document.createElement('div');
-                    if (this.submittedWeeks[weekNumber]) {
-                        const lockIndicator = document.createElement('div');
-                        lockIndicator.className = 'lock-indicator';
-                        lockIndicator.innerHTML = '🔒';
-                        lockIndicator.title = 'Week submitted - contact manager for changes';
-                        dayEl.appendChild(lockIndicator);
-                    }
-                    
-                    if (entry.isTimeOff) {
-                        entryDisplay.className = 'hours-display time-off';
-                        entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
-                    } else {
-                        entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
-                        entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
-                    }
-                    dayEl.appendChild(entryDisplay);
-                }
-
-                if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
-                    dayEl.onclick = () => this.modal.open(date, entry);
-                }
-
-                this.calendarEl.appendChild(dayEl);
+            
+            // Display time off or hours
+            if (entry.isTimeOff) {
+                entryDisplay.className = 'hours-display time-off';
+                entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
+            } else {
+                entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
+                entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
             }
+            dayEl.appendChild(entryDisplay);
         }
+
+        // Add click handler for current week's days that aren't submitted
+        if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
+            dayEl.onclick = () => this.modal.open(date, entry);
+        }
+
+        this.calendarEl.appendChild(dayEl);
+    }
+}
 
         updateWeekSummary() {
             const today = new Date();

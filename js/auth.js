@@ -8,6 +8,15 @@
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
+            // Set auth persistence to LOCAL to maintain state across refreshes
+            this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => {
+                    console.log('Auth persistence set to LOCAL');
+                })
+                .catch((error) => {
+                    console.error('Error setting persistence:', error);
+                });
+
             // Set up auth state observer
             this.auth.onAuthStateChanged(user => this.handleAuthStateChange(user));
             
