@@ -26,31 +26,32 @@ featured_image: /images/demo/home.jpg
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
 	<link rel="stylesheet" href="css/auth.css">
-</head>
+
 <body>
-    <!-- Initialize Firebase and load scripts -->
-<script>
-    // Initialize Firebase first
-    if (!window.firebaseInitialized) {
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-            authDomain: "autonomy-heroes.firebaseapp.com",
-            projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.firebasestorage.app",
-            messagingSenderId: "266526530869",
-            appId: "1:266526530869:web:ea95143735be497ca8007c"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        window.firebaseInitialized = true;
-    }
-</script>
+<!-- Initialize Firebase first -->
+    <script>
+        if (!window.firebaseInitialized) {
+            const firebaseConfig = {
+                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+                authDomain: "autonomy-heroes.firebaseapp.com",
+                projectId: "autonomy-heroes",
+                storageBucket: "autonomy-heroes.firebasestorage.app",
+                messagingSenderId: "266526530869",
+                appId: "1:266526530869:web:ea95143735be497ca8007c"
+            };
+            
+            firebase.initializeApp(firebaseConfig);
+            window.firebaseInitialized = true;
+        }
+    </script>
 
 <!-- Load dependencies in order -->
 <script src="js/utils.js"></script>
 <script src="js/modal.js"></script>
 <script src="js/calendar.js"></script>
 <script src="js/auth.js"></script>
+
+</head>
 
 <!-- Initialize application -->
 <script>

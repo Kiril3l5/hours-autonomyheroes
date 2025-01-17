@@ -17,37 +17,56 @@
             this.bindEvents();
         }
 
-        handleAuthStateChange(user) {
-            try {
-                const authContainer = document.getElementById('authContainer');
-                const calendarContainer = document.getElementById('calendarContainer');
+        // Update handleAuthStateChange method in auth.js
+handleAuthStateChange(user) {
+    try {
+        const authContainer = document.getElementById('authContainer');
+        const calendarContainer = document.getElementById('calendarContainer');
 
-                if (user) {
-                    console.log('User signed in:', user.uid);
-                    authContainer.classList.remove('active');
-                    calendarContainer.classList.add('active');
-                    document.getElementById('userEmail').textContent = user.email;
+        if (user) {
+            console.log('User signed in:', user.uid);
+            
+            // Update UI
+            authContainer.classList.remove('active');
+            calendarContainer.classList.add('active');
+            document.getElementById('userEmail').textContent = user.email;
 
-                    // Initialize calendar with delay to ensure DOM is ready
-                    setTimeout(() => {
-                        if (window.TimeTrackingCalendar && !window.calendar) {
-                            console.log('Creating new calendar instance');
+            // Initialize calendar with retry logic
+            const initializeCalendar = () => {
+                if (window.TimeTrackingCalendar) {
+                    console.log('Creating new calendar instance');
+                    if (!window.calendar) {
+                        try {
                             window.calendar = new TimeTrackingCalendar();
+                            if (!window.calendar) {
+                                throw new Error('Calendar creation failed');
+                            }
+                        } catch (error) {
+                            console.error('Error creating calendar:', error);
+                            // Retry after a short delay
+                            setTimeout(initializeCalendar, 100);
                         }
-                    }, 100);
-                } else {
-                    console.log('User signed out');
-                    authContainer.classList.add('active');
-                    calendarContainer.classList.remove('active');
-                    document.getElementById('userEmail').textContent = '';
-                    if (window.calendar) {
-                        window.calendar = null;
                     }
+                } else {
+                    console.log('Waiting for TimeTrackingCalendar to be available...');
+                    setTimeout(initializeCalendar, 100);
                 }
-            } catch (error) {
-                console.error('Auth state change error:', error);
+            };
+
+            initializeCalendar();
+        } else {
+            console.log('User signed out');
+            authContainer.classList.add('active');
+            calendarContainer.classList.remove('active');
+            document.getElementById('userEmail').textContent = '';
+            if (window.calendar) {
+                window.calendar = null;
             }
         }
+    } catch (error) {
+        console.error('Auth state change error:', error);
+    }
+}
 
         bindEvents() {
             // Tab switching
