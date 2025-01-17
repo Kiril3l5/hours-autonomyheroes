@@ -3,72 +3,50 @@
     class AuthManager {
         constructor() {
             console.log('Initializing AuthManager...');
+            
+            // Initialize Firebase Auth and Firestore
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
-            // Initialize right away if TimeTrackingCalendar is available
-            if (window.TimeTrackingCalendar) {
-                this.bindEvents();
-                this.initAuthStateObserver();
-            } else {
-                this.waitForDependencies();
-            }
-        }
-
-        waitForDependencies() {
-            let attempts = 0;
-            const maxAttempts = 50;
-            const interval = 100;
-
-            const checkDependencies = () => {
-                if (window.TimeTrackingCalendar) {
-                    console.log('TimeTrackingCalendar found');
-                    this.bindEvents();
-                    this.initAuthStateObserver();
-                    return;
-                }
-                
-                attempts++;
-                if (attempts >= maxAttempts) {
-                    console.error('Dependencies not found after', attempts, 'attempts');
-                    return;
-                }
-                
-                setTimeout(checkDependencies, interval);
-            };
-
-            checkDependencies();
-        }
-
-        initAuthStateObserver() {
+            // Set up initial auth state check
             this.auth.onAuthStateChanged((user) => {
-                try {
-                    const authContainer = document.getElementById('authContainer');
-                    const calendarContainer = document.getElementById('calendarContainer');
+                this.handleAuthStateChange(user);
+            });
 
-                    if (user) {
-                        console.log('User signed in:', user.uid);
-                        authContainer.classList.remove('active');
-                        calendarContainer.classList.add('active');
-                        document.getElementById('userEmail').textContent = user.email;
+            // Bind events immediately
+            this.bindEvents();
+        }
 
-                        if (!window.calendar) {
+        handleAuthStateChange(user) {
+            try {
+                const authContainer = document.getElementById('authContainer');
+                const calendarContainer = document.getElementById('calendarContainer');
+
+                if (user) {
+                    console.log('User signed in:', user.uid);
+                    authContainer.classList.remove('active');
+                    calendarContainer.classList.add('active');
+                    document.getElementById('userEmail').textContent = user.email;
+
+                    // Initialize calendar with delay to ensure DOM is ready
+                    setTimeout(() => {
+                        if (window.TimeTrackingCalendar && !window.calendar) {
                             console.log('Creating new calendar instance');
                             window.calendar = new TimeTrackingCalendar();
                         }
-                    } else {
-                        console.log('User signed out');
-                        authContainer.classList.add('active');
-                        calendarContainer.classList.remove('active');
-                        document.getElementById('userEmail').textContent = '';
-                        if (window.calendar) {
-                            window.calendar = null;
-                        }
+                    }, 100);
+                } else {
+                    console.log('User signed out');
+                    authContainer.classList.add('active');
+                    calendarContainer.classList.remove('active');
+                    document.getElementById('userEmail').textContent = '';
+                    if (window.calendar) {
+                        window.calendar = null;
                     }
-                } catch (error) {
-                    console.error('Auth state change error:', error);
                 }
-            });
+            } catch (error) {
+                console.error('Auth state change error:', error);
+            }
         }
 
         bindEvents() {
@@ -138,10 +116,15 @@
     }
 
     // Initialize auth manager when DOM is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, creating AuthManager');
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.authManager) {
+                window.authManager = new AuthManager();
+            }
+        });
+    } else {
         if (!window.authManager) {
             window.authManager = new AuthManager();
         }
-    });
+    }
 })();
