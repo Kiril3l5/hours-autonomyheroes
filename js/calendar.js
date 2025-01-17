@@ -15,26 +15,36 @@
 
     class TimeTrackingCalendar {
         constructor() {
-    console.log('TimeTrackingCalendar constructor called');
+    console.log('TimeTrackingCalendar constructor called, checking dependencies...');
+    
+    // Check utils
+    if (typeof formatDate !== 'function') {
+        console.error('Utils not loaded (formatDate missing)');
+        throw new Error('Utils must be loaded first');
+    }
+
+    // Check Modal
+    if (typeof TimeEntryModal !== 'function') {
+        console.error('TimeEntryModal not available');
+        throw new Error('TimeEntryModal is required');
+    }
+
+    // Check user
     const currentUser = firebase.auth().currentUser;
     if (!currentUser) {
         console.error('No user logged in');
         throw new Error('User must be logged in to initialize calendar');
     }
     
-    // Verify dependencies
-    if (!window.TimeEntryModal) {
-        console.error('TimeEntryModal not available');
-        throw new Error('TimeEntryModal is required');
-    }
-    
-    // Initialize properties
-    this.currentDate = new Date();
-    this.timeEntries = {};
-    this.submittedWeeks = {};
-    this.userId = currentUser.uid;
+    console.log('Dependencies verified, initializing calendar...');
     
     try {
+        // Initialize properties
+        this.currentDate = new Date();
+        this.timeEntries = {};
+        this.submittedWeeks = {};
+        this.userId = currentUser.uid;
+        
         // Initialize calendar
         this.initializeCalendar();
         console.log('TimeTrackingCalendar initialization complete');
