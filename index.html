@@ -54,14 +54,6 @@ featured_image: /images/demo/home.jpg
 
 <!-- Initialize application -->
 <script>
-    // Global state tracking
-    window.appState = {
-        firebaseInitialized: true,
-        calendarLoaded: false,
-        modalLoaded: false,
-        authManagerLoaded: false
-    };
-
     function initializeApp() {
         console.log('Checking dependencies...');
         
@@ -226,8 +218,14 @@ featured_image: /images/demo/home.jpg
     </div>
 </script>
 
+<!-- Load dependencies in order -->
+<script src="js/utils.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/auth.js"></script>
+
+<!-- Initialize application - keep only this version -->
 <script>
-    // Initialize state tracking
     window.appState = {
         firebaseInitialized: false,
         calendarLoaded: false,
@@ -279,6 +277,4 @@ featured_image: /images/demo/home.jpg
         initializeApp();
     }
 </script>
-
 </body>
-</html>
