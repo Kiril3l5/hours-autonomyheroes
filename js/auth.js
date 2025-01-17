@@ -8,42 +8,55 @@
             this.auth = firebase.auth();
             this.db = firebase.firestore();
 
-            // Set auth persistence to LOCAL to maintain state across refreshes
+            // Set auth persistence to LOCAL
             this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
                 .then(() => {
                     console.log('Auth persistence set to LOCAL');
+                    
+                    // Only set up auth state observer after persistence is set
+                    this.auth.onAuthStateChanged(user => this.handleAuthStateChange(user));
                 })
                 .catch((error) => {
                     console.error('Error setting persistence:', error);
                 });
 
-            // Set up auth state observer
-            this.auth.onAuthStateChanged(user => this.handleAuthStateChange(user));
-            
             // Bind events
             this.bindEvents();
         }
 
-        handleAuthStateChange(user) {
+        async handleAuthStateChange(user) {
             const authContainer = document.getElementById('authContainer');
             const calendarContainer = document.getElementById('calendarContainer');
 
             if (user) {
                 console.log('User signed in:', user.uid);
                 
-                // Update UI
-                authContainer.classList.remove('active');
-                calendarContainer.classList.add('active');
-                document.getElementById('userEmail').textContent = user.email;
+                try {
+                    // Verify Firestore access
+                    await this.db.collection('workers').doc(user.uid).get();
+                    
+                    // Update UI
+                    authContainer.classList.remove('active');
+                    calendarContainer.classList.add('active');
+                    document.getElementById('userEmail').textContent = user.email;
 
-                // Create calendar instance
-                if (!window.calendar && window.TimeTrackingCalendar) {
-                    console.log('Creating new calendar instance');
-                    try {
-                        window.calendar = new TimeTrackingCalendar();
-                    } catch (error) {
-                        console.error('Error creating calendar:', error);
+                    // Create calendar instance
+                    if (!window.calendar && window.TimeTrackingCalendar) {
+                        console.log('Creating new calendar instance');
+                        try {
+                            window.calendar = new TimeTrackingCalendar();
+                        } catch (error) {
+                            console.error('Error creating calendar:', error);
+                            // If calendar creation fails, show error and log out
+                            alert('Error initializing calendar. Please try logging in again.');
+                            this.auth.signOut();
+                        }
                     }
+                } catch (error) {
+                    console.error('Error verifying Firestore access:', error);
+                    // If Firestore access fails, log out
+                    alert('Error accessing data. Please try logging in again.');
+                    this.auth.signOut();
                 }
             } else {
                 console.log('User signed out');
@@ -127,6 +140,6 @@
     }
 
     // Make AuthManager available globally
-    window.AuthManager = AuthManager;
+window.AuthManager = AuthManager;
     console.log('AuthManager loaded and registered');
 })();

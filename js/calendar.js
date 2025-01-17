@@ -2,67 +2,84 @@
 (function() {
     console.log('Calendar module loading...');
     
-    // Check dependencies
-    if (!window.firebase) {
-        console.error('Firebase not loaded');
-        return;
-    }
-    
-    if (!window.TimeEntryModal) {
-        console.error('TimeEntryModal not loaded');
-        return;
-    }
-
     class TimeTrackingCalendar {
         constructor() {
-    console.log('TimeTrackingCalendar constructor called, checking dependencies...');
-    
-    // Check utils
-    if (typeof formatDate !== 'function') {
-        console.error('Utils not loaded (formatDate missing)');
-        throw new Error('Utils must be loaded first');
-    }
+            console.log('TimeTrackingCalendar constructor called, checking dependencies...');
+            
+            // Check dependencies
+            this.checkDependencies();
+            
+            // Initialize with current user
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                throw new Error('User must be logged in to initialize calendar');
+            }
+            
+            // Initialize properties
+            this.initialize(currentUser);
+        }
 
-    // Check Modal
-    if (typeof TimeEntryModal !== 'function') {
-        console.error('TimeEntryModal not available');
-        throw new Error('TimeEntryModal is required');
-    }
+        checkDependencies() {
+            if (!window.firebase) {
+                throw new Error('Firebase not loaded');
+            }
+            
+            if (!window.TimeEntryModal) {
+                throw new Error('TimeEntryModal not loaded');
+            }
 
-    // Check user
-    const currentUser = firebase.auth().currentUser;
-    if (!currentUser) {
-        console.error('No user logged in');
-        throw new Error('User must be logged in to initialize calendar');
-    }
-    
-    console.log('Dependencies verified, initializing calendar...');
-    
-    try {
-        // Initialize properties
-        this.currentDate = new Date();
-        this.timeEntries = {};
-        this.submittedWeeks = {};
-        this.userId = currentUser.uid;
-        
-        // Initialize calendar
-        this.initializeCalendar();
-        console.log('TimeTrackingCalendar initialization complete');
-    } catch (error) {
-        console.error('Error initializing calendar:', error);
-        throw error;
-    }
-}
+            if (typeof formatDate !== 'function') {
+                throw new Error('Utils must be loaded first');
+            }
+        }
 
-        initializeCalendar() {
+        async initialize(user) {
+            try {
+                console.log('Initializing calendar for user:', user.uid);
+                this.currentDate = new Date();
+                this.timeEntries = {};
+                this.submittedWeeks = {};
+                this.userId = user.uid;
+                
+                // Set up Firestore reference
+                this.db = firebase.firestore();
+                
+                // Initialize calendar elements and events
+                await this.initializeCalendar();
+                console.log('Calendar initialization complete');
+            } catch (error) {
+                console.error('Error during calendar initialization:', error);
+                throw error;
+            }
+        }
+
+        async initializeCalendar() {
             // Initialize elements
             this.calendarEl = document.getElementById('calendar');
             this.summaryEl = document.getElementById('weekSummary');
             
-            // Create modal with callback to handle updates
+            if (!this.calendarEl || !this.summaryEl) {
+                throw new Error('Required calendar elements not found');
+            }
+            
+            // Create modal with callback
             this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
 
             // Add event listeners
+            this.bindEvents();
+
+            // Load data
+            await Promise.all([
+                this.loadSavedData(),
+                this.loadSubmittedEntries()
+            ]);
+            
+            // Initial render
+            this.render();
+            this.updateWeekSummary();
+        }
+
+        bindEvents() {
             document.getElementById('prevMonth').addEventListener('click', () => {
                 this.currentDate.setMonth(this.currentDate.getMonth() - 1);
                 this.render();
@@ -74,26 +91,27 @@
             });
             
             document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
-
-            // Load saved data
-            this.loadSavedData();
-            this.loadSubmittedEntries();
-            
-            // Initial render
-            this.render();
-            this.updateWeekSummary();
         }
 
         loadSavedData() {
-            const savedEntries = localStorage.getItem(`timeEntries_${this.userId}`);
-            const savedSubmissions = localStorage.getItem(`submittedWeeks_${this.userId}`);
-            
-            if (savedEntries) {
-                this.timeEntries = JSON.parse(savedEntries);
-            }
-            
-            if (savedSubmissions) {
-                this.submittedWeeks = JSON.parse(savedSubmissions);
+            try {
+                const savedEntries = localStorage.getItem(`timeEntries_${this.userId}`);
+                const savedSubmissions = localStorage.getItem(`submittedWeeks_${this.userId}`);
+                
+                if (savedEntries) {
+                    this.timeEntries = JSON.parse(savedEntries);
+                }
+                
+                if (savedSubmissions) {
+                    this.submittedWeeks = JSON.parse(savedSubmissions);
+                }
+                
+                console.log('Loaded saved data from localStorage');
+            } catch (error) {
+                console.error('Error loading saved data:', error);
+                // Reset to empty state if load fails
+                this.timeEntries = {};
+                this.submittedWeeks = {};
             }
         }
 
@@ -108,28 +126,30 @@
             const dateKey = normalizedDate.toISOString();
             console.log('Handling time entry for:', dateKey, entry);
 
-            if (entry === null) {
-                delete this.timeEntries[dateKey];
-                console.log('Entry deleted');
-            } else {
-                this.timeEntries[dateKey] = {
-                    ...entry,
-                    dateKey,
-                    timestamp: new Date().toISOString()
-                };
-                console.log('Entry saved:', this.timeEntries[dateKey]);
-            }
-            
-            // Save to localStorage
             try {
+                if (entry === null) {
+                    delete this.timeEntries[dateKey];
+                    console.log('Entry deleted');
+                } else {
+                    this.timeEntries[dateKey] = {
+                        ...entry,
+                        dateKey,
+                        timestamp: new Date().toISOString()
+                    };
+                    console.log('Entry saved:', this.timeEntries[dateKey]);
+                }
+                
+                // Save to localStorage
                 localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
                 console.log('Entries saved to localStorage');
+                
+                // Update UI
+                this.render();
+                this.updateWeekSummary();
             } catch (error) {
-                console.error('Error saving to localStorage:', error);
+                console.error('Error handling time entry:', error);
+                alert('Error saving entry. Please try again.');
             }
-            
-            this.render();
-            this.updateWeekSummary();
         }
 
         render() {
