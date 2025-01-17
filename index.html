@@ -224,58 +224,61 @@ featured_image: /images/demo/home.jpg
             </div>
         </div>
     </div>
+</script>
 
-<!-- Load dependencies in order at the end of body -->
-    <script src="js/utils.js"></script>
-    <script>
-        console.log('Utils loaded');
-        window.appState.utilsLoaded = true;
-    </script>
+<script>
+    // Initialize state tracking
+    window.appState = {
+        firebaseInitialized: false,
+        calendarLoaded: false,
+        modalLoaded: false,
+        authManagerLoaded: false,
+        attemptsCount: 0
+    };
 
-    <script src="js/modal.js"></script>
-    <script>
-        console.log('Modal dependencies check:', {
-            utils: typeof formatDate === 'function'
+    function waitForDependencies() {
+        return new Promise((resolve, reject) => {
+            function checkDependencies() {
+                if (window.TimeTrackingCalendar && typeof AuthManager === 'function') {
+                    resolve();
+                    return;
+                }
+
+                window.appState.attemptsCount++;
+                if (window.appState.attemptsCount > 50) {
+                    reject(new Error('Dependencies failed to load after 50 attempts'));
+                    return;
+                }
+
+                setTimeout(checkDependencies, 100);
+            }
+
+            checkDependencies();
         });
-        window.appState.modalLoaded = true;
-    </script>
+    }
 
-    <script src="js/calendar.js"></script>
-    <script>
-        console.log('Calendar dependencies check:', {
-            modal: typeof TimeEntryModal === 'function',
-            utils: typeof formatDate === 'function'
-        });
-        window.appState.calendarLoaded = true;
-    </script>
-
-    <script src="js/auth.js"></script>
-
-    <!-- Initialize application -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, checking dependencies:', {
-                firebase: !!window.firebase,
-                TimeEntryModal: !!window.TimeEntryModal,
-                TimeTrackingCalendar: !!window.TimeTrackingCalendar,
-                formatDate: typeof formatDate === 'function'
-            });
-
-            if (!window.authManager && window.TimeTrackingCalendar) {
-                console.log('Dependencies ready, initializing AuthManager...');
+    async function initializeApp() {
+        try {
+            await waitForDependencies();
+            
+            console.log('Dependencies loaded, initializing application...');
+            if (!window.authManager) {
                 window.authManager = new AuthManager();
                 window.appState.authManagerLoaded = true;
-            } else {
-                console.error('Missing dependencies:', {
-                    TimeTrackingCalendar: !!window.TimeTrackingCalendar,
-                    authManager: !!window.authManager
-                });
             }
-        });
-    </script>
-</body>
-</html>
+        } catch (error) {
+            console.error('Failed to initialize application:', error);
+            alert('There was an error loading the application. Please refresh the page.');
+        }
+    }
 
+    // Start initialization when DOM is loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+        initializeApp();
+    }
 </script>
+
 </body>
 </html>
