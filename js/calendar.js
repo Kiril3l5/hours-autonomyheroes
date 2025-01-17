@@ -1,6 +1,6 @@
 // calendar.js
 (function() {
-	 console.log('Calendar module loading...');
+    console.log('Calendar module loading...');
     
     // Check dependencies
     if (!window.firebase) {
@@ -13,15 +13,6 @@
         return;
     }
 
-    class TimeTrackingCalendar {
-        // ... rest of the class code ...
-    }
-
-    // Register globally
-    window.TimeTrackingCalendar = TimeTrackingCalendar;
-    window.appState.calendarLoaded = true;
-    console.log('TimeTrackingCalendar loaded and registered');
-})();
     class TimeTrackingCalendar {
         constructor() {
             console.log('TimeTrackingCalendar constructor called');
@@ -389,6 +380,10 @@
         }
     }
 
+    // Make it globally available
     window.TimeTrackingCalendar = TimeTrackingCalendar;
+    if (window.appState) {
+        window.appState.calendarLoaded = true;
+    }
     console.log('TimeTrackingCalendar loaded and registered');
 })();

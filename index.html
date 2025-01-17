@@ -106,36 +106,36 @@ featured_image: /images/demo/home.jpg
             <button id="registerTab" class="auth-tab">Register</button>
         </div>
 
-        <!-- Login Form -->
-        <form id="loginForm" class="auth-form active">
+    <!-- Login Form -->
+<form id="loginForm" class="auth-form active">
     <div class="form-group">
         <label for="loginEmail">Work Email</label>
-        <input type="email" id="loginEmail" required>
+        <input type="email" id="loginEmail" autocomplete="username" required>
     </div>
     <div class="form-group">
         <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" autocomplete="current-password" required>  <!-- Add autocomplete here -->
+        <input type="password" id="loginPassword" autocomplete="current-password" required>
     </div>
     <button type="submit" class="btn-auth">Login</button>
 </form>
 
 <!-- Register Form -->
 <form id="registerForm" class="auth-form">
-            <div class="form-group">
-                <label for="regFirstName">First Name</label>
-                <input type="text" id="regFirstName" required>
-            </div>
-            <div class="form-group">
-                <label for="regLastName">Last Name</label>
-                <input type="text" id="regLastName" required>
-            </div>
-            <div class="form-group">
-                <label for="regEmail">Work Email</label>
-                <input type="email" id="regEmail" required>
-            </div>
-            <div class="form-group">
-                <label for="regPassword">Password</label>
-        <input type="password" id="regPassword" autocomplete="new-password" required>  <!-- Add autocomplete here -->
+    <div class="form-group">
+        <label for="regFirstName">First Name</label>
+        <input type="text" id="regFirstName" autocomplete="given-name" required>
+    </div>
+    <div class="form-group">
+        <label for="regLastName">Last Name</label>
+        <input type="text" id="regLastName" autocomplete="family-name" required>
+    </div>
+    <div class="form-group">
+        <label for="regEmail">Work Email</label>
+        <input type="email" id="regEmail" autocomplete="username" required>
+    </div>
+    <div class="form-group">
+        <label for="regPassword">Password</label>
+        <input type="password" id="regPassword" autocomplete="new-password" required>
     </div>
     <button type="submit" class="btn-auth">Register</button>
 </form>
