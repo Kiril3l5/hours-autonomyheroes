@@ -28,68 +28,6 @@ featured_image: /images/demo/home.jpg
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-    <!-- Initialize Firebase first -->
-    <script>
-        window.appState = {
-            firebaseInitialized: false,
-            calendarLoaded: false,
-            modalLoaded: false,
-            authManagerLoaded: false
-        };
-
-        if (!window.firebaseInitialized) {
-            const firebaseConfig = {
-                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-                authDomain: "autonomy-heroes.firebaseapp.com",
-                projectId: "autonomy-heroes",
-                storageBucket: "autonomy-heroes.firebasestorage.app",
-                messagingSenderId: "266526530869",
-                appId: "1:266526530869:web:ea95143735be497ca8007c"
-            };
-            
-            firebase.initializeApp(firebaseConfig);
-            window.appState.firebaseInitialized = true;
-        }
-    </script>
-
-<!-- Initialize application -->
-<script>
-    function initializeApp() {
-        console.log('Checking dependencies...');
-        
-        // Check if TimeTrackingCalendar is available
-        if (window.TimeTrackingCalendar && !window.authManager) {
-            console.log('Dependencies found, initializing AuthManager...');
-            window.authManager = new AuthManager();
-            window.appState.authManagerLoaded = true;
-            return;
-        }
-        
-        // Check if we've waited too long
-        if (!window.appState.attemptsCount) {
-            window.appState.attemptsCount = 0;
-        }
-        
-        window.appState.attemptsCount++;
-        
-        if (window.appState.attemptsCount > 50) {
-            console.error('Failed to initialize after 50 attempts');
-            alert('There was an error loading the application. Please refresh the page.');
-            return;
-        }
-        
-        // Wait and try again
-        console.log('Waiting for dependencies... Attempt:', window.appState.attemptsCount);
-        setTimeout(initializeApp, 100);
-    }
-
-    // Start initialization when everything is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, starting initialization...');
-        initializeApp();
-    });
-</script>
-
     <!-- Auth Container -->
     <div id="authContainer" class="auth-container active">
         <h1 class="title">Hours Portal</h1>
@@ -99,39 +37,40 @@ featured_image: /images/demo/home.jpg
             <button id="registerTab" class="auth-tab">Register</button>
         </div>
 
-    <!-- Login Form -->
-<form id="loginForm" class="auth-form active">
-    <div class="form-group">
-        <label for="loginEmail">Work Email</label>
-        <input type="email" id="loginEmail" autocomplete="username" required>
-    </div>
-    <div class="form-group">
-        <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" autocomplete="current-password" required>
-    </div>
-    <button type="submit" class="btn-auth">Login</button>
-</form>
+        <!-- Login Form -->
+        <form id="loginForm" class="auth-form active">
+            <div class="form-group">
+                <label for="loginEmail">Work Email</label>
+                <input type="email" id="loginEmail" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn-auth">Login</button>
+        </form>
 
-<!-- Register Form -->
-<form id="registerForm" class="auth-form">
-    <div class="form-group">
-        <label for="regFirstName">First Name</label>
-        <input type="text" id="regFirstName" autocomplete="given-name" required>
+        <!-- Register Form -->
+        <form id="registerForm" class="auth-form">
+            <div class="form-group">
+                <label for="regFirstName">First Name</label>
+                <input type="text" id="regFirstName" autocomplete="given-name" required>
+            </div>
+            <div class="form-group">
+                <label for="regLastName">Last Name</label>
+                <input type="text" id="regLastName" autocomplete="family-name" required>
+            </div>
+            <div class="form-group">
+                <label for="regEmail">Work Email</label>
+                <input type="email" id="regEmail" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" autocomplete="new-password" required>
+            </div>
+            <button type="submit" class="btn-auth">Register</button>
+        </form>
     </div>
-    <div class="form-group">
-        <label for="regLastName">Last Name</label>
-        <input type="text" id="regLastName" autocomplete="family-name" required>
-    </div>
-    <div class="form-group">
-        <label for="regEmail">Work Email</label>
-        <input type="email" id="regEmail" autocomplete="username" required>
-    </div>
-    <div class="form-group">
-        <label for="regPassword">Password</label>
-        <input type="password" id="regPassword" autocomplete="new-password" required>
-    </div>
-    <button type="submit" class="btn-auth">Register</button>
-</form>
 
     <!-- Calendar Container -->
     <div id="calendarContainer" class="calendar-container">
@@ -169,8 +108,7 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-
-<!-- Time Entry Modal -->
+    <!-- Time Entry Modal -->
     <div id="timeEntryModal" class="modal">
         <div class="modal-content">
             <h2 id="modalDate"></h2>
@@ -216,65 +154,37 @@ featured_image: /images/demo/home.jpg
             </div>
         </div>
     </div>
-</script>
 
-<!-- Load dependencies in order -->
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/auth.js"></script>
+    <!-- Load dependencies in order -->
+    <script src="js/utils.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/auth.js"></script>
 
-<!-- Initialize application - keep only this version -->
-<script>
-    window.appState = {
-        firebaseInitialized: false,
-        calendarLoaded: false,
-        modalLoaded: false,
-        authManagerLoaded: false,
-        attemptsCount: 0
-    };
-
-    function waitForDependencies() {
-        return new Promise((resolve, reject) => {
-            function checkDependencies() {
-                if (window.TimeTrackingCalendar && typeof AuthManager === 'function') {
-                    resolve();
-                    return;
-                }
-
-                window.appState.attemptsCount++;
-                if (window.appState.attemptsCount > 50) {
-                    reject(new Error('Dependencies failed to load after 50 attempts'));
-                    return;
-                }
-
-                setTimeout(checkDependencies, 100);
-            }
-
-            checkDependencies();
-        });
-    }
-
-    async function initializeApp() {
-        try {
-            await waitForDependencies();
+    <!-- Initialize application -->
+    <script>
+        // Initialize Firebase first
+        if (!window.firebaseInitialized) {
+            const firebaseConfig = {
+                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+                authDomain: "autonomy-heroes.firebaseapp.com",
+                projectId: "autonomy-heroes",
+                storageBucket: "autonomy-heroes.firebasestorage.app",
+                messagingSenderId: "266526530869",
+                appId: "1:266526530869:web:ea95143735be497ca8007c"
+            };
             
-            console.log('Dependencies loaded, initializing application...');
+            firebase.initializeApp(firebaseConfig);
+            window.firebaseInitialized = true;
+        }
+
+        // Start initialization when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing...');
             if (!window.authManager) {
                 window.authManager = new AuthManager();
-                window.appState.authManagerLoaded = true;
             }
-        } catch (error) {
-            console.error('Failed to initialize application:', error);
-            alert('There was an error loading the application. Please refresh the page.');
-        }
-    }
-
-    // Start initialization when DOM is loaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeApp);
-    } else {
-        initializeApp();
-    }
-</script>
+        });
+    </script>
 </body>
+</html>
