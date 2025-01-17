@@ -65,33 +65,41 @@
         }
 
         save() {
-            const hours = Number(this.hoursInput.value);
-            const isTimeOff = this.timeOffCheck.checked;
+    if (!this.selectedDate) {
+        console.error('No date selected');
+        return;
+    }
 
-            // If hours is 0, clear the entry
-            if (hours === 0) {
-                console.log('Clearing entry for:', this.selectedDate.toISOString());
-                this.onSave(this.selectedDate, null);
-                this.close();
-                return;
-            }
+    const hours = Number(this.hoursInput.value);
+    const isTimeOff = this.timeOffCheck.checked;
 
-            // Create entry object
-            const entry = {
-                hours: isTimeOff ? 0 : Number(hours),
-                isTimeOff,
-                managerApproved: isTimeOff && this.managerApprovedCheck.checked,
-                overtimeApproved: hours > 8 && this.overtimeApprovedCheck.checked,
-                shortDayApproved: hours < 8 && this.shortDayApprovedCheck.checked,
-                timestamp: new Date().toISOString()
-            };
+    // If hours is 0, clear the entry
+    if (hours === 0) {
+        console.log('Clearing entry for:', this.selectedDate.toISOString());
+        this.onSave(this.selectedDate, null);
+        this.close();
+        return;
+    }
 
-            console.log('Saving entry:', entry, 'for date:', this.selectedDate.toISOString());
-            
-            // Call save callback
-            this.onSave(this.selectedDate, entry);
-            this.close();
-        }
+    // Create entry object
+    const entry = {
+        hours: isTimeOff ? 0 : Number(hours),
+        isTimeOff,
+        managerApproved: isTimeOff && this.managerApprovedCheck.checked,
+        overtimeApproved: hours > 8 && this.overtimeApprovedCheck.checked,
+        shortDayApproved: hours < 8 && this.shortDayApprovedCheck.checked,
+        timestamp: new Date().toISOString()
+    };
+
+    console.log('Saving entry:', entry, 'for date:', this.selectedDate.toISOString());
+    
+    // Call save callback with the current selected date
+    const dateToSave = new Date(this.selectedDate);
+    this.onSave(dateToSave, entry);
+    
+    // Only close after save is complete
+    this.close();
+}
     }
 
     // Make it globally available
