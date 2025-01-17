@@ -1,5 +1,27 @@
 // calendar.js
 (function() {
+	 console.log('Calendar module loading...');
+    
+    // Check dependencies
+    if (!window.firebase) {
+        console.error('Firebase not loaded');
+        return;
+    }
+    
+    if (!window.TimeEntryModal) {
+        console.error('TimeEntryModal not loaded');
+        return;
+    }
+
+    class TimeTrackingCalendar {
+        // ... rest of the class code ...
+    }
+
+    // Register globally
+    window.TimeTrackingCalendar = TimeTrackingCalendar;
+    window.appState.calendarLoaded = true;
+    console.log('TimeTrackingCalendar loaded and registered');
+})();
     class TimeTrackingCalendar {
         constructor() {
             console.log('TimeTrackingCalendar constructor called');

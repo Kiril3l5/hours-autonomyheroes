@@ -30,6 +30,7 @@ featured_image: /images/demo/home.jpg
 <body>
     <!-- Initialize Firebase and load scripts -->
 <script>
+    // Initialize Firebase first
     if (!window.firebaseInitialized) {
         const firebaseConfig = {
             apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
@@ -53,19 +54,45 @@ featured_image: /images/demo/home.jpg
 
 <!-- Initialize application -->
 <script>
+    // Global state tracking
+    window.appState = {
+        firebaseInitialized: true,
+        calendarLoaded: false,
+        authManagerLoaded: false
+    };
+
     function initializeApp() {
+        console.log('Checking dependencies...');
+        
+        // Check if TimeTrackingCalendar is available
         if (window.TimeTrackingCalendar && !window.authManager) {
-            console.log('Initializing AuthManager...');
+            console.log('Dependencies found, initializing AuthManager...');
             window.authManager = new AuthManager();
-        } else {
-            console.warn('Waiting for dependencies...');
-            setTimeout(initializeApp, 100);
+            window.appState.authManagerLoaded = true;
+            return;
         }
+        
+        // Check if we've waited too long
+        if (!window.appState.attemptsCount) {
+            window.appState.attemptsCount = 0;
+        }
+        
+        window.appState.attemptsCount++;
+        
+        if (window.appState.attemptsCount > 50) {
+            console.error('Failed to initialize after 50 attempts');
+            alert('There was an error loading the application. Please refresh the page.');
+            return;
+        }
+        
+        // Wait and try again
+        console.log('Waiting for dependencies... Attempt:', window.appState.attemptsCount);
+        setTimeout(initializeApp, 100);
     }
 
     // Start initialization when everything is loaded
-    window.addEventListener('load', () => {
-        console.log('Window loaded, starting initialization...');
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, starting initialization...');
         initializeApp();
     });
 </script>
@@ -81,19 +108,19 @@ featured_image: /images/demo/home.jpg
 
         <!-- Login Form -->
         <form id="loginForm" class="auth-form active">
-            <div class="form-group">
-                <label for="loginEmail">Work Email</label>
-                <input type="email" id="loginEmail" required>
-            </div>
-            <div class="form-group">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" required>
-            </div>
-            <button type="submit" class="btn-auth">Login</button>
-        </form>
+    <div class="form-group">
+        <label for="loginEmail">Work Email</label>
+        <input type="email" id="loginEmail" required>
+    </div>
+    <div class="form-group">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required>  <!-- Add autocomplete here -->
+    </div>
+    <button type="submit" class="btn-auth">Login</button>
+</form>
 
-        <!-- Register Form -->
-        <form id="registerForm" class="auth-form">
+<!-- Register Form -->
+<form id="registerForm" class="auth-form">
             <div class="form-group">
                 <label for="regFirstName">First Name</label>
                 <input type="text" id="regFirstName" required>
@@ -108,11 +135,10 @@ featured_image: /images/demo/home.jpg
             </div>
             <div class="form-group">
                 <label for="regPassword">Password</label>
-                <input type="password" id="regPassword" required>
-            </div>
-            <button type="submit" class="btn-auth">Register</button>
-        </form>
+        <input type="password" id="regPassword" autocomplete="new-password" required>  <!-- Add autocomplete here -->
     </div>
+    <button type="submit" class="btn-auth">Register</button>
+</form>
 
     <!-- Calendar Container -->
     <div id="calendarContainer" class="calendar-container">
