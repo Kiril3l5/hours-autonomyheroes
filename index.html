@@ -18,18 +18,25 @@ featured_image: /images/demo/home.jpg
     <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
     
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css">
-	<link rel="stylesheet" href="css/auth.css">
-
-<body>
-<!-- Initialize Firebase first -->
+    <!-- Initialize Firebase first -->
     <script>
+        window.appState = {
+            firebaseInitialized: false,
+            calendarLoaded: false,
+            modalLoaded: false,
+            authManagerLoaded: false
+        };
+
         if (!window.firebaseInitialized) {
             const firebaseConfig = {
                 apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
@@ -41,17 +48,9 @@ featured_image: /images/demo/home.jpg
             };
             
             firebase.initializeApp(firebaseConfig);
-            window.firebaseInitialized = true;
+            window.appState.firebaseInitialized = true;
         }
     </script>
-
-<!-- Load dependencies in order -->
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/auth.js"></script>
-
-</head>
 
 <!-- Initialize application -->
 <script>
@@ -225,6 +224,57 @@ featured_image: /images/demo/home.jpg
             </div>
         </div>
     </div>
+
+<!-- Load dependencies in order at the end of body -->
+    <script src="js/utils.js"></script>
+    <script>
+        console.log('Utils loaded');
+        window.appState.utilsLoaded = true;
+    </script>
+
+    <script src="js/modal.js"></script>
+    <script>
+        console.log('Modal dependencies check:', {
+            utils: typeof formatDate === 'function'
+        });
+        window.appState.modalLoaded = true;
+    </script>
+
+    <script src="js/calendar.js"></script>
+    <script>
+        console.log('Calendar dependencies check:', {
+            modal: typeof TimeEntryModal === 'function',
+            utils: typeof formatDate === 'function'
+        });
+        window.appState.calendarLoaded = true;
+    </script>
+
+    <script src="js/auth.js"></script>
+
+    <!-- Initialize application -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, checking dependencies:', {
+                firebase: !!window.firebase,
+                TimeEntryModal: !!window.TimeEntryModal,
+                TimeTrackingCalendar: !!window.TimeTrackingCalendar,
+                formatDate: typeof formatDate === 'function'
+            });
+
+            if (!window.authManager && window.TimeTrackingCalendar) {
+                console.log('Dependencies ready, initializing AuthManager...');
+                window.authManager = new AuthManager();
+                window.appState.authManagerLoaded = true;
+            } else {
+                console.error('Missing dependencies:', {
+                    TimeTrackingCalendar: !!window.TimeTrackingCalendar,
+                    authManager: !!window.authManager
+                });
+            }
+        });
+    </script>
+</body>
+</html>
 
 </script>
 </body>
