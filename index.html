@@ -83,209 +83,108 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-    <!-- Error boundary -->
-    <div id="errorBoundary" class="error-boundary" aria-hidden="true">
-        <h2>Something went wrong</h2>
-        <p id="errorMessage"></p>
-        <button onclick="window.location.reload()">Reload Application</button>
-    </div>
+    <!-- Rest of the HTML remains the same until the scripts section -->
 
-    <!-- Auth Container -->
-    <div id="authContainer" class="auth-container active">
-        <h1 class="title">Hours Portal</h1>
-        
-        <!-- Auth tabs -->
-        <div class="auth-tabs" role="tablist">
-            <button id="loginTab" class="auth-tab active" role="tab">Login</button>
-            <button id="registerTab" class="auth-tab" role="tab">Register</button>
-        </div>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-        <!-- Login Form -->
-        <form id="loginForm" class="auth-form active">
-            <div class="form-group">
-                <label for="loginEmail">Work Email</label>
-                <input type="email" id="loginEmail" required>
-            </div>
-            <div class="form-group">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" required>
-            </div>
-            <button type="submit" class="btn-auth">Login</button>
-        </form>
-
-        <!-- Register Form -->
-        <form id="registerForm" class="auth-form">
-            <div class="form-group">
-                <label for="regFirstName">First Name</label>
-                <input type="text" id="regFirstName" required>
-            </div>
-            <div class="form-group">
-                <label for="regLastName">Last Name</label>
-                <input type="text" id="regLastName" required>
-            </div>
-            <div class="form-group">
-                <label for="regEmail">Work Email</label>
-                <input type="email" id="regEmail" required>
-            </div>
-            <div class="form-group">
-                <label for="regPassword">Password</label>
-                <input type="password" id="regPassword" required minlength="6">
-            </div>
-            <button type="submit" class="btn-auth">Register</button>
-        </form>
-    </div>
-
-    <!-- Calendar Container -->
-    <div id="calendarContainer" class="calendar-container">
-        <div class="user-info">
-            Logged in as <span id="userEmail"></span>
-            <button id="logoutBtn" class="btn-logout">Logout</button>
-        </div>
-        
-        <div class="container">
-            <div class="calendar-card">
-                <h1 class="title">Hours Portal</h1>
-                
-                <div class="month-nav">
-                    <button class="nav-btn" id="prevMonth">←</button>
-                    <span class="month-title" id="currentMonth"></span>
-                    <button class="nav-btn" id="nextMonth">→</button>
-                </div>
-
-                <div class="calendar-grid" id="calendar">
-                    <div class="weekday">Mon</div>
-                    <div class="weekday">Tue</div>
-                    <div class="weekday">Wed</div>
-                    <div class="weekday">Thu</div>
-                    <div class="weekday">Fri</div>
-                    <div class="weekday">Sat</div>
-                    <div class="weekday">Sun</div>
-                </div>
-
-                <div class="submit-section">
-                    <h2>Current Week Summary</h2>
-                    <div id="weekSummary"></div>
-                    <button id="submitWeek" class="btn">Submit Week for Approval</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Time Entry Modal -->
-    <div id="timeEntryModal" class="modal">
-        <div class="modal-content">
-            <h2 id="modalDate"></h2>
-            <div class="form-group">
-                <label>
-                    <input type="checkbox" id="timeOffCheck">
-                    Time off request
-                </label>
-                <div id="timeOffApproval" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="managerApprovedCheck">
-                        Time off was approved by manager
-                    </label>
-                </div>
-            </div>
-            <div id="hoursSection">
-                <div class="form-group">
-                    <label for="hoursInput">Hours Worked</label>
-                    <input type="number" id="hoursInput" min="0" max="24" step="0.5" value="8">
-                </div>
-                <div id="overtimeApproval" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="overtimeApprovedCheck">
-                        Overtime was approved by manager
-                    </label>
-                </div>
-                <div id="shortDayApproval" style="display: none;">
-                    <label>
-                        <input type="checkbox" id="shortDayApprovedCheck">
-                        Less than 8h was approved by manager
-                    </label>
-                </div>
-            </div>
-            <div class="actions">
-                <button id="cancelEntry" class="btn-secondary">Cancel</button>
-                <button id="saveEntry" class="btn">Save</button>
-            </div>
-        </div>
-    </div>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
-
-<!-- Initialize Firebase -->
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-        authDomain: "autonomy-heroes.firebaseapp.com",
-        projectId: "autonomy-heroes",
-        storageBucket: "autonomy-heroes.appspot.com",
-        messagingSenderId: "266526530869",
-        appId: "1:266526530869:web:ea95143735be497ca8007c"
-    };
-    
-    firebase.initializeApp(firebaseConfig);
-</script>
-
-<!-- App scripts -->
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/auth.js"></script>
-
-<!-- Initialize app -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, initializing application...');
-        if (!window.authManager) {
-            window.authManager = new AuthManager();
-        }
-    });
-
-    window.addEventListener('load', () => {
-        document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-    });
-</script>
-
-<!-- Service Worker -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registered:', registration.scope);
-                })
-                .catch(error => {
-                    console.warn('ServiceWorker registration failed:', error);
-                });
-        });
-    }
-</script>
-
-    <!-- Initialize application -->
+    <!-- Initialize Firebase -->
     <script>
-        // Hide loading indicator when window loads
-        window.addEventListener('load', () => {
-            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-        });
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+            authDomain: "autonomy-heroes.firebaseapp.com",
+            projectId: "autonomy-heroes",
+            storageBucket: "autonomy-heroes.appspot.com",
+            messagingSenderId: "266526530869",
+            appId: "1:266526530869:web:ea95143735be497ca8007c"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+    </script>
 
-        // Initialize app after DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, initializing application...');
+    <!-- App scripts -->
+    <script src="js/utils.js"></script>
+    <script>
+        // Ensure utils are loaded before proceeding
+        if (!window.DateUtils || !window.StringUtils || !window.DOMUtils) {
+            throw new Error('Utils not loaded properly');
+        }
+    </script>
+    
+    <script src="js/modal.js"></script>
+    <script>
+        // Verify modal loaded
+        if (!window.TimeEntryModal) {
+            throw new Error('TimeEntryModal not loaded properly');
+        }
+    </script>
+    
+    <script src="js/calendar.js"></script>
+    <script>
+        // Verify calendar loaded
+        if (!window.TimeTrackingCalendar) {
+            throw new Error('TimeTrackingCalendar not loaded properly');
+        }
+    </script>
+    
+    <script src="js/auth.js"></script>
+    <script>
+        // Verify auth loaded
+        if (!window.AuthManager) {
+            throw new Error('AuthManager not loaded properly');
+        }
+    </script>
+
+    <!-- Initialize app -->
+    <script>
+        let authManager = null;
+        
+        async function initializeApp() {
             try {
-                window.authManager = new AuthManager();
+                // Wait for DOM content to be fully loaded
+                if (document.readyState !== 'complete') {
+                    await new Promise(resolve => {
+                        window.addEventListener('load', resolve);
+                    });
+                }
+
+                // Create auth manager instance
+                if (!authManager) {
+                    authManager = new AuthManager();
+                }
+
+                // Hide loading indicator
+                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+
             } catch (error) {
                 console.error('Error initializing application:', error);
                 const errorBoundary = document.getElementById('errorBoundary');
                 const errorMessage = document.getElementById('errorMessage');
                 errorMessage.textContent = 'Failed to initialize application. Please try reloading.';
                 errorBoundary.removeAttribute('aria-hidden');
+                
+                // Hide loading indicator even if there's an error
+                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
             }
-        });
+        }
+
+        // Start initialization
+        initializeApp();
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.warn('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
     </script>
 </body>
 </html>

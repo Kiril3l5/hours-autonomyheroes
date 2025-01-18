@@ -5,6 +5,7 @@ class AuthManager {
         this.isInitialized = false;
         this.auth = null;
         this.db = null;
+        this.calendarInstance = null;
 
         // Initialize Firebase instances
         this.initializeFirebase();
@@ -36,6 +37,11 @@ class AuthManager {
         const authContainer = document.getElementById('authContainer');
         const calendarContainer = document.getElementById('calendarContainer');
 
+        if (!authContainer || !calendarContainer) {
+            console.error('Required DOM elements not found');
+            return;
+        }
+
         if (user) {
             console.log('User signed in:', user.uid);
             
@@ -43,13 +49,21 @@ class AuthManager {
                 // Update UI
                 authContainer.classList.remove('active');
                 calendarContainer.classList.add('active');
-                document.getElementById('userEmail').textContent = user.email;
+                
+                const userEmailElement = document.getElementById('userEmail');
+                if (userEmailElement) {
+                    userEmailElement.textContent = user.email;
+                }
 
-                // Initialize calendar with retries
-                await this.initializeCalendar();
+                // Initialize calendar with retries and timeout
+                await this.initializeCalendarWithTimeout();
             } catch (error) {
                 console.error('Error after login:', error);
                 this.showError('Error initializing calendar. Please refresh the page.');
+                
+                // Reset UI state on error
+                authContainer.classList.add('active');
+                calendarContainer.classList.remove('active');
             }
         } else {
             console.log('User signed out');
@@ -57,39 +71,69 @@ class AuthManager {
             // Update UI
             authContainer.classList.add('active');
             calendarContainer.classList.remove('active');
-            document.getElementById('userEmail').textContent = '';
+            
+            const userEmailElement = document.getElementById('userEmail');
+            if (userEmailElement) {
+                userEmailElement.textContent = '';
+            }
             
             // Clean up calendar
-            if (window.calendar) {
-                window.calendar = null;
+            if (this.calendarInstance) {
+                // Add any necessary cleanup here
+                this.calendarInstance = null;
             }
         }
     }
 
-    async initializeCalendar(retryCount = 0) {
+    async initializeCalendarWithTimeout(retryCount = 0) {
         const maxRetries = 3;
         const retryDelay = 1000; // 1 second
+        const timeout = 5000; // 5 seconds
 
         try {
-            // Check if TimeTrackingCalendar exists
-            if (typeof TimeTrackingCalendar === 'undefined') {
-                throw new Error('Calendar component not loaded');
-            }
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Calendar initialization timed out')), timeout);
+            });
 
-            if (!window.calendar) {
-                window.calendar = new TimeTrackingCalendar();
-            }
+            // Create the initialization promise
+            const initPromise = this.initializeCalendar(retryCount);
+
+            // Race between timeout and initialization
+            await Promise.race([initPromise, timeoutPromise]);
         } catch (error) {
             console.error(`Calendar initialization error (attempt ${retryCount + 1}):`, error);
             
             if (retryCount < maxRetries) {
                 // Wait and retry
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
-                return this.initializeCalendar(retryCount + 1);
+                return this.initializeCalendarWithTimeout(retryCount + 1);
             } else {
                 throw new Error('Failed to initialize calendar after multiple attempts');
             }
         }
+    }
+
+    async initializeCalendar(retryCount = 0) {
+        // Check if TimeTrackingCalendar exists
+        if (typeof TimeTrackingCalendar === 'undefined') {
+            throw new Error('Calendar component not loaded');
+        }
+
+        if (!this.calendarInstance) {
+            // Verify DOM elements exist
+            const requiredElements = ['calendar', 'weekSummary', 'submitWeek'];
+            for (const elementId of requiredElements) {
+                if (!document.getElementById(elementId)) {
+                    throw new Error(`Required element #${elementId} not found`);
+                }
+            }
+
+            // Initialize calendar
+            this.calendarInstance = new TimeTrackingCalendar();
+        }
+
+        return this.calendarInstance;
     }
 
     bindEvents() {
