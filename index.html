@@ -23,11 +23,6 @@ featured_image: /images/demo/home.jpg
     <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
-
     <!-- Auth Container -->
     <div id="authContainer" class="auth-container active">
         <h1 class="title">Hours Portal</h1>
@@ -179,9 +174,13 @@ featured_image: /images/demo/home.jpg
         });
     </script>
 
-    <!-- Initialize application -->
+<!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+
+    <!-- Initialize Firebase -->
     <script>
-        // Initialize Firebase first
         if (!window.firebaseInitialized) {
             const firebaseConfig = {
                 apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
@@ -195,22 +194,43 @@ featured_image: /images/demo/home.jpg
             firebase.initializeApp(firebaseConfig);
             window.firebaseInitialized = true;
         }
+    </script>
 
-        // Start initialization when all scripts are loaded
+    <!-- Application Scripts -->
+    <script>
+        // Load scripts in sequence
+        const loadScripts = async () => {
+            const scripts = [
+                'js/utils.js',
+                'js/modal.js',
+                'js/calendar.js',
+                'js/auth.js'
+            ];
+
+            for (const script of scripts) {
+                await new Promise((resolve, reject) => {
+                    const scriptEl = document.createElement('script');
+                    scriptEl.src = script;
+                    scriptEl.onload = resolve;
+                    scriptEl.onerror = reject;
+                    document.body.appendChild(scriptEl);
+                });
+            }
+
+            // Initialize app after all scripts are loaded
+            console.log('All scripts loaded, initializing application...');
+            if (!window.authManager) {
+                window.authManager = new AuthManager();
+            }
+        };
+
+        // Start loading when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, waiting for scripts...');
-            const checkDependencies = setInterval(() => {
-                if (window.TimeEntryModal && window.TimeTrackingCalendar) {
-                    console.log('All dependencies loaded, initializing...');
-                    if (!window.authManager) {
-                        window.authManager = new AuthManager();
-                    }
-                    clearInterval(checkDependencies);
-                }
-            }, 100);
-
-            // Clear check after 10 seconds to prevent infinite checking
-            setTimeout(() => clearInterval(checkDependencies), 10000);
+            console.log('DOM loaded, loading scripts...');
+            loadScripts().catch(error => {
+                console.error('Error loading scripts:', error);
+                alert('Error loading application. Please refresh the page.');
+            });
         });
     </script>
 </body>

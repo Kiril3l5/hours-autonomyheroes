@@ -1,82 +1,83 @@
 // calendar.js
+// calendar.js
 (function() {
     console.log('Calendar module loading...');
     
-    // Check dependencies with retry
-    let retryCount = 0;
-    const maxRetries = 5;
-    
-    function checkDependencies() {
-        if (!window.firebase) {
-            console.error('Firebase not loaded');
-            return false;
-        }
-        
-        if (!window.TimeEntryModal) {
-            if (retryCount < maxRetries) {
-                retryCount++;
-                console.log(`TimeEntryModal not loaded, retrying (${retryCount}/${maxRetries})...`);
-                setTimeout(checkDependencies, 500);
-                return false;
+    // Wait for dependencies with async retry
+    const waitForDependencies = async () => {
+        let retryCount = 0;
+        const maxRetries = 10;
+        const retryDelay = 500; // ms
+
+        const checkDeps = () => {
+            if (!window.firebase) {
+                throw new Error('Firebase not loaded');
             }
-            console.error('TimeEntryModal not loaded after retries');
-            return false;
-        }
-
-        if (typeof formatDate !== 'function') {
-            console.error('Utils not loaded');
-            return false;
-        }
-
-        return true;
-    }
-
-    // Only proceed if dependencies are available
-    if (!checkDependencies()) {
-        return;
-    }
-
-    class TimeTrackingCalendar {
-        constructor() {
-            console.log('TimeTrackingCalendar constructor called, checking dependencies...');
             
-            // Check utils
+            if (!window.TimeEntryModal) {
+                throw new Error('TimeEntryModal not loaded');
+            }
+
             if (typeof formatDate !== 'function') {
-                console.error('Utils not loaded (formatDate missing)');
-                throw new Error('Utils must be loaded first');
+                throw new Error('Utils not loaded');
             }
 
-            // Check Modal
-            if (typeof TimeEntryModal !== 'function') {
-                console.error('TimeEntryModal not available');
-                throw new Error('TimeEntryModal is required');
-            }
+            return true;
+        };
 
-            // Check user
-            const currentUser = firebase.auth().currentUser;
-            if (!currentUser) {
-                console.error('No user logged in');
-                throw new Error('User must be logged in to initialize calendar');
-            }
-            
-            console.log('Dependencies verified, initializing calendar...');
-            
+        while (retryCount < maxRetries) {
             try {
-                // Initialize properties
-                this.currentDate = new Date();
-                this.timeEntries = {};
-                this.submittedWeeks = {};
-                this.userId = currentUser.uid;
-                this.db = firebase.firestore(); // Initialize Firestore reference
-                
-                // Initialize calendar
-                this.initializeCalendar();
-                console.log('TimeTrackingCalendar initialization complete');
+                return checkDeps();
             } catch (error) {
-                console.error('Error initializing calendar:', error);
-                throw error;
+                console.log(`Dependency check failed (attempt ${retryCount + 1}/${maxRetries}): ${error.message}`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                retryCount++;
             }
         }
+
+        throw new Error('Dependencies not available after maximum retries');
+    };
+
+    // Initialize calendar module
+    const init = async () => {
+        try {
+            await waitForDependencies();
+            console.log('All dependencies loaded, initializing calendar module...');
+            defineCalendarClass();
+        } catch (error) {
+            console.error('Failed to initialize calendar module:', error);
+        }
+    };
+
+    // Define the calendar class
+    const defineCalendarClass = () => {
+        class TimeTrackingCalendar {
+            constructor() {
+                console.log('TimeTrackingCalendar constructor called...');
+                
+                // Check user
+                const currentUser = firebase.auth().currentUser;
+                if (!currentUser) {
+                    console.error('No user logged in');
+                    throw new Error('User must be logged in to initialize calendar');
+                }
+                
+                try {
+                    // Initialize properties
+                    this.currentDate = new Date();
+                    this.timeEntries = {};
+                    this.submittedWeeks = {};
+                    this.userId = currentUser.uid;
+                    this.db = firebase.firestore();
+                    
+                    // Initialize calendar
+                    this.initializeCalendar();
+                    console.log('TimeTrackingCalendar initialization complete');
+                } catch (error) {
+                    console.error('Error initializing calendar:', error);
+                    throw error;
+                }
+            }
 
         initializeCalendar() {
             // Initialize elements
@@ -480,7 +481,11 @@
         }
     }
 
-    // Make it globally available
-    window.TimeTrackingCalendar = TimeTrackingCalendar;
-    console.log('TimeTrackingCalendar loaded and registered');
+     // Make it globally available
+        window.TimeTrackingCalendar = TimeTrackingCalendar;
+        console.log('TimeTrackingCalendar class registered');
+    };
+
+    // Start initialization
+    init();
 })();
