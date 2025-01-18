@@ -2,84 +2,68 @@
 (function() {
     console.log('Calendar module loading...');
     
+    // Check dependencies
+    if (!window.firebase) {
+        console.error('Firebase not loaded');
+        return;
+    }
+    
+    if (!window.TimeEntryModal) {
+        console.error('TimeEntryModal not loaded');
+        return;
+    }
+
     class TimeTrackingCalendar {
         constructor() {
             console.log('TimeTrackingCalendar constructor called, checking dependencies...');
             
-            // Check dependencies
-            this.checkDependencies();
-            
-            // Initialize with current user
+            // Check utils
+            if (typeof formatDate !== 'function') {
+                console.error('Utils not loaded (formatDate missing)');
+                throw new Error('Utils must be loaded first');
+            }
+
+            // Check Modal
+            if (typeof TimeEntryModal !== 'function') {
+                console.error('TimeEntryModal not available');
+                throw new Error('TimeEntryModal is required');
+            }
+
+            // Check user
             const currentUser = firebase.auth().currentUser;
             if (!currentUser) {
+                console.error('No user logged in');
                 throw new Error('User must be logged in to initialize calendar');
             }
             
-            // Initialize properties
-            this.initialize(currentUser);
-        }
-
-        checkDependencies() {
-            if (!window.firebase) {
-                throw new Error('Firebase not loaded');
-            }
+            console.log('Dependencies verified, initializing calendar...');
             
-            if (!window.TimeEntryModal) {
-                throw new Error('TimeEntryModal not loaded');
-            }
-
-            if (typeof formatDate !== 'function') {
-                throw new Error('Utils must be loaded first');
-            }
-        }
-
-        async initialize(user) {
             try {
-                console.log('Initializing calendar for user:', user.uid);
+                // Initialize properties
                 this.currentDate = new Date();
                 this.timeEntries = {};
                 this.submittedWeeks = {};
-                this.userId = user.uid;
+                this.userId = currentUser.uid;
+                this.db = firebase.firestore(); // Initialize Firestore reference
                 
-                // Set up Firestore reference
-                this.db = firebase.firestore();
-                
-                // Initialize calendar elements and events
-                await this.initializeCalendar();
-                console.log('Calendar initialization complete');
+                // Initialize calendar
+                this.initializeCalendar();
+                console.log('TimeTrackingCalendar initialization complete');
             } catch (error) {
-                console.error('Error during calendar initialization:', error);
+                console.error('Error initializing calendar:', error);
                 throw error;
             }
         }
 
-        async initializeCalendar() {
+        initializeCalendar() {
             // Initialize elements
             this.calendarEl = document.getElementById('calendar');
             this.summaryEl = document.getElementById('weekSummary');
             
-            if (!this.calendarEl || !this.summaryEl) {
-                throw new Error('Required calendar elements not found');
-            }
-            
-            // Create modal with callback
+            // Create modal with callback to handle updates
             this.modal = new TimeEntryModal((date, entry) => this.handleTimeEntry(date, entry));
 
             // Add event listeners
-            this.bindEvents();
-
-            // Load data
-            await Promise.all([
-                this.loadSavedData(),
-                this.loadSubmittedEntries()
-            ]);
-            
-            // Initial render
-            this.render();
-            this.updateWeekSummary();
-        }
-
-        bindEvents() {
             document.getElementById('prevMonth').addEventListener('click', () => {
                 this.currentDate.setMonth(this.currentDate.getMonth() - 1);
                 this.render();
@@ -91,6 +75,14 @@
             });
             
             document.getElementById('submitWeek').addEventListener('click', () => this.submitWeek());
+
+            // Load saved data
+            this.loadSavedData();
+            this.loadSubmittedEntries();
+            
+            // Initial render
+            this.render();
+            this.updateWeekSummary();
         }
 
         loadSavedData() {
@@ -105,28 +97,26 @@
                 if (savedSubmissions) {
                     this.submittedWeeks = JSON.parse(savedSubmissions);
                 }
-                
-                console.log('Loaded saved data from localStorage');
             } catch (error) {
                 console.error('Error loading saved data:', error);
-                // Reset to empty state if load fails
+                // Reset to empty if load fails
                 this.timeEntries = {};
                 this.submittedWeeks = {};
             }
         }
 
         handleTimeEntry(date, entry) {
-            // Normalize the date to midnight UTC
-            const normalizedDate = new Date(Date.UTC(
-                date.getFullYear(),
-                date.getMonth(),
-                date.getDate(),
-                0, 0, 0, 0
-            ));
-            const dateKey = normalizedDate.toISOString();
-            console.log('Handling time entry for:', dateKey, entry);
-
             try {
+                // Normalize the date to midnight UTC
+                const normalizedDate = new Date(Date.UTC(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    0, 0, 0, 0
+                ));
+                const dateKey = normalizedDate.toISOString();
+                console.log('Handling time entry for:', dateKey, entry);
+
                 if (entry === null) {
                     delete this.timeEntries[dateKey];
                     console.log('Entry deleted');
@@ -143,7 +133,6 @@
                 localStorage.setItem(`timeEntries_${this.userId}`, JSON.stringify(this.timeEntries));
                 console.log('Entries saved to localStorage');
                 
-                // Update UI
                 this.render();
                 this.updateWeekSummary();
             } catch (error) {
@@ -153,212 +142,213 @@
         }
 
         render() {
-    // Update month/year display
-    document.getElementById('currentMonth').textContent = this.currentDate.toLocaleDateString('en-US', { 
-        month: 'long', 
-        year: 'numeric' 
-    });
+            try {
+                // Update month/year display
+                document.getElementById('currentMonth').textContent = this.currentDate.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
 
-    // Clear existing calendar days while keeping weekday headers
-    while (this.calendarEl.children.length > 7) {
-        this.calendarEl.removeChild(this.calendarEl.lastChild);
-    }
-
-    const year = this.currentDate.getFullYear();
-    const month = this.currentDate.getMonth();
-    const firstDay = getFirstDayOfMonth(year, month);
-    const daysInMonth = getDaysInMonth(year, month);
-    
-    // Calculate start day (Monday = 0, Sunday = 6)
-    let startDay = firstDay === 0 ? 6 : firstDay - 1;
-
-    // Add empty days before the first day of the month
-    for (let i = 0; i < startDay; i++) {
-        const emptyDay = document.createElement('div');
-        emptyDay.className = 'day empty';
-        this.calendarEl.appendChild(emptyDay);
-    }
-
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-        // Create local date object
-        const date = new Date(year, month, day);
-        
-        // Create normalized UTC date for consistent lookup
-        const normalizedDate = new Date(Date.UTC(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            0, 0, 0, 0
-        ));
-        const dateKey = normalizedDate.toISOString();
-        
-        // Create day element
-        const dayEl = document.createElement('div');
-        const isCurrentWeek = checkIfCurrentWeek(date);
-        const isPastWeek = checkIfPastWeek(date);
-        const weekNumber = getWeekNumber(date);
-        
-        dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
-        
-        // Add day number
-        const dayNumber = document.createElement('div');
-        dayNumber.className = 'day-number';
-        dayNumber.textContent = day;
-        dayEl.appendChild(dayNumber);
-
-        // Check for existing entry
-        const entry = this.timeEntries[dateKey];
-        if (entry) {
-            const entryDisplay = document.createElement('div');
-            
-            // Show lock indicator if week is submitted
-            if (this.submittedWeeks[weekNumber]) {
-                const lockIndicator = document.createElement('div');
-                lockIndicator.className = 'lock-indicator';
-                lockIndicator.innerHTML = '🔒';
-                lockIndicator.title = 'Week submitted - contact manager for changes';
-                dayEl.appendChild(lockIndicator);
-            }
-            
-            // Display time off or hours
-            if (entry.isTimeOff) {
-                entryDisplay.className = 'hours-display time-off';
-                entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
-            } else {
-                entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
-                entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
-            }
-            dayEl.appendChild(entryDisplay);
-        }
-
-        // Add click handler for current week's days that aren't submitted
-        if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
-            dayEl.onclick = () => this.modal.open(date, entry);
-        }
-
-        this.calendarEl.appendChild(dayEl);
-    }
-}
-
-        updateWeekSummary() {
-    const today = new Date();
-    const weekDates = getWeekDates(today);
-    const weekNumber = getWeekNumber(today);
-    
-    let totalHours = 0;
-    let summaryHtml = '<div class="week-details">';
-
-    weekDates.forEach(date => {
-        // Normalize date to midnight UTC
-        const normalizedDate = new Date(Date.UTC(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            0, 0, 0, 0
-        ));
-        const dateKey = normalizedDate.toISOString();
-        const entry = this.timeEntries[dateKey];
-
-        // Calculate total hours
-        if (entry && !entry.isTimeOff) {
-            const dayHours = Number(entry.hours) || 0;
-            totalHours += dayHours;
-        }
-
-        // Check if this is today
-        const isToday = date.toDateString() === today.toDateString();
-        const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
-        
-        // Determine status display
-        let statusHtml = 'No Entry';
-        let statusStyle = 'color: #6C7A89;';
-        
-        if (entry) {
-            if (entry.isTimeOff) {
-                statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
-                statusStyle = 'color: #dc2626;';
-            } else {
-                statusHtml = `${entry.hours}h`;
-                if (entry.hours > 8) {
-                    statusStyle = 'color: #ff8d00;';
-                    if (entry.overtimeApproved) statusHtml += ' (OT ✓)';
-                } else if (entry.hours < 8) {
-                    statusStyle = 'color: #2563eb;';
-                    if (entry.shortDayApproved) statusHtml += ' (✓)';
-                } else {
-                    statusStyle = 'color: #059669;';
+                // Clear existing calendar days while keeping weekday headers
+                while (this.calendarEl.children.length > 7) {
+                    this.calendarEl.removeChild(this.calendarEl.lastChild);
                 }
+
+                const year = this.currentDate.getFullYear();
+                const month = this.currentDate.getMonth();
+                const firstDay = getFirstDayOfMonth(year, month);
+                const daysInMonth = getDaysInMonth(year, month);
+                
+                // Calculate start day (Monday = 0, Sunday = 6)
+                let startDay = firstDay === 0 ? 6 : firstDay - 1;
+
+                // Add empty days
+                for (let i = 0; i < startDay; i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'day empty';
+                    this.calendarEl.appendChild(emptyDay);
+                }
+
+                // Add days
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day);
+                    const normalizedDate = new Date(Date.UTC(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        0, 0, 0, 0
+                    ));
+                    const dateKey = normalizedDate.toISOString();
+                    
+                    const dayEl = document.createElement('div');
+                    const isCurrentWeek = checkIfCurrentWeek(date);
+                    const isPastWeek = checkIfPastWeek(date);
+                    const weekNumber = getWeekNumber(date);
+                    
+                    dayEl.className = `day ${isCurrentWeek ? 'current-week' : ''} ${isPastWeek ? 'past-week' : ''}`;
+                    
+                    const dayNumber = document.createElement('div');
+                    dayNumber.className = 'day-number';
+                    dayNumber.textContent = day;
+                    dayEl.appendChild(dayNumber);
+
+                    const entry = this.timeEntries[dateKey];
+                    if (entry) {
+                        const entryDisplay = document.createElement('div');
+                        
+                        if (this.submittedWeeks[weekNumber]) {
+                            const lockIndicator = document.createElement('div');
+                            lockIndicator.className = 'lock-indicator';
+                            lockIndicator.innerHTML = '🔒';
+                            lockIndicator.title = 'Week submitted - contact manager for changes';
+                            dayEl.appendChild(lockIndicator);
+                        }
+                        
+                        if (entry.isTimeOff) {
+                            entryDisplay.className = 'hours-display time-off';
+                            entryDisplay.innerHTML = `Time Off${entry.managerApproved ? '<div class="approval-check">✓ Approved</div>' : ''}`;
+                        } else {
+                            entryDisplay.className = `hours-display ${entry.hours > 8 ? 'hours-overtime' : 'hours-regular'}`;
+                            entryDisplay.innerHTML = `${entry.hours}h${entry.hours > 8 && entry.overtimeApproved ? '<div class="approval-check">✓ OT Approved</div>' : ''}`;
+                        }
+                        dayEl.appendChild(entryDisplay);
+                    }
+
+                    if (isCurrentWeek && !isPastWeek && !this.submittedWeeks[weekNumber]) {
+                        dayEl.onclick = () => this.modal.open(date, entry);
+                    }
+
+                    this.calendarEl.appendChild(dayEl);
+                }
+            } catch (error) {
+                console.error('Error rendering calendar:', error);
+                alert('Error displaying calendar. Please refresh the page.');
+            }
+        }
+		updateWeekSummary() {
+            try {
+                const today = new Date();
+                const weekDates = getWeekDates(today);
+                const weekNumber = getWeekNumber(today);
+                
+                let totalHours = 0;
+                let summaryHtml = '<div class="week-details">';
+
+                weekDates.forEach(date => {
+                    const normalizedDate = new Date(Date.UTC(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        0, 0, 0, 0
+                    ));
+                    const dateKey = normalizedDate.toISOString();
+                    const entry = this.timeEntries[dateKey];
+
+                    if (entry && !entry.isTimeOff) {
+                        const dayHours = Number(entry.hours) || 0;
+                        totalHours += dayHours;
+                    }
+
+                    const isToday = date.toDateString() === today.toDateString();
+                    const dayStyle = isToday ? 'color: #ff8d00; font-weight: bold;' : '';
+                    
+                    let statusHtml = 'No Entry';
+                    let statusStyle = 'color: #6C7A89;';
+                    
+                    if (entry) {
+                        if (entry.isTimeOff) {
+                            statusHtml = entry.managerApproved ? 'Time Off (✓)' : 'Time Off';
+                            statusStyle = 'color: #dc2626;';
+                        } else {
+                            statusHtml = `${entry.hours}h`;
+                            if (entry.hours > 8) {
+                                statusStyle = 'color: #ff8d00;';
+                                if (entry.overtimeApproved) statusHtml += ' (OT ✓)';
+                            } else if (entry.hours < 8) {
+                                statusStyle = 'color: #2563eb;';
+                                if (entry.shortDayApproved) statusHtml += ' (✓)';
+                            } else {
+                                statusStyle = 'color: #059669;';
+                            }
+                        }
+                    }
+
+                    summaryHtml += `
+                        <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
+                            <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
+                            <span style="${statusStyle}">${statusHtml}</span>
+                        </div>
+                    `;
+                });
+
+                summaryHtml = `
+                    <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px; text-align: center;">
+                        Week ${weekNumber} Total: ${totalHours}h
+                    </div>
+                    ${summaryHtml}
+                `;
+
+                if (!this.submittedWeeks[weekNumber]) {
+                    if (totalHours < 40) {
+                        summaryHtml += `
+                            <div style="text-align: center; color: #dc2626; margin-top: 16px;">
+                                ${40 - totalHours}h remaining to reach 40h week
+                            </div>
+                        `;
+                    } else if (totalHours > 40) {
+                        summaryHtml += `
+                            <div style="text-align: center; color: #ff8d00; margin-top: 16px;">
+                                ${totalHours - 40}h overtime this week
+                            </div>
+                        `;
+                    }
+                }
+
+                this.summaryEl.innerHTML = summaryHtml;
+
+                const submitBtn = document.getElementById('submitWeek');
+                if (submitBtn) {
+                    if (this.submittedWeeks[weekNumber]) {
+                        submitBtn.disabled = true;
+                        submitBtn.style.opacity = '0.5';
+                        submitBtn.textContent = 'Week Submitted';
+                    } else {
+                        submitBtn.disabled = false;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating week summary:', error);
             }
         }
 
-        // Add day summary to HTML
-        summaryHtml += `
-            <div style="display: flex; justify-content: space-between; margin: 8px 0; ${dayStyle}">
-                <span>${date.toLocaleDateString('en-US', { weekday: 'long' })}</span>
-                <span style="${statusStyle}">${statusHtml}</span>
-            </div>
-        `;
-    });
-
-    // Add week total to summary
-    summaryHtml = `
-        <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 16px; text-align: center;">
-            Week ${weekNumber} Total: ${totalHours}h
-        </div>
-        ${summaryHtml}
-    `;
-
-    // Add remaining hours or overtime message if week isn't submitted
-    if (!this.submittedWeeks[weekNumber]) {
-        if (totalHours < 40) {
-            summaryHtml += `
-                <div style="text-align: center; color: #dc2626; margin-top: 16px;">
-                    ${40 - totalHours}h remaining to reach 40h week
-                </div>
-            `;
-        } else if (totalHours > 40) {
-            summaryHtml += `
-                <div style="text-align: center; color: #ff8d00; margin-top: 16px;">
-                    ${totalHours - 40}h overtime this week
-                </div>
-            `;
-        }
-    }
-
-    // Update summary in DOM
-    this.summaryEl.innerHTML = summaryHtml;
-
-    // Update submit button state
-    const submitBtn = document.getElementById('submitWeek');
-    if (submitBtn) {
-        if (this.submittedWeeks[weekNumber]) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            submitBtn.textContent = 'Week Submitted';
-        } else {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '1';
-            submitBtn.textContent = totalHours >= 40 ? 'Submit Week for Approval' : 'Complete 40h Before Submitting';
-        }
-    }
-}
-
-        async submitWeek() {
+        async verifyAuth() {
             const currentUser = firebase.auth().currentUser;
             if (!currentUser) {
-                console.error('No user logged in');
-                alert('Please log in to submit hours');
-                return;
+                throw new Error('User not logged in');
             }
 
-            const weekNumber = getWeekNumber(new Date());
-            const year = new Date().getFullYear();
-            const weekId = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
-            const docId = `${currentUser.uid}_${weekId}`;
-            
+            // Verify Firestore access
             try {
-                const existingSubmission = await firebase.firestore()
+                await this.db.collection('workers').doc(currentUser.uid).get();
+                return currentUser;
+            } catch (error) {
+                console.error('Error verifying Firestore access:', error);
+                throw new Error('Unable to verify user access');
+            }
+        }
+
+        async submitWeek() {
+            try {
+                const currentUser = await this.verifyAuth();
+                
+                const weekNumber = getWeekNumber(new Date());
+                const year = new Date().getFullYear();
+                const weekId = `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+                const docId = `${currentUser.uid}_${weekId}`;
+                
+                const existingSubmission = await this.db
                     .collection('timeEntries')
                     .doc(docId)
                     .get();
@@ -370,11 +360,17 @@
 
                 const weekDates = getWeekDates(new Date());
                 const hoursArray = weekDates.map(date => {
-                    const dateKey = new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString();
+                    const normalizedDate = new Date(Date.UTC(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        0, 0, 0, 0
+                    ));
+                    const dateKey = normalizedDate.toISOString();
                     const entry = this.timeEntries[dateKey] || null;
                     
                     return {
-                        date: date.toISOString(),
+                        date: normalizedDate.toISOString(),
                         hours: entry?.hours || 0,
                         isTimeOff: entry?.isTimeOff || false,
                         managerApproved: entry?.managerApproved || false,
@@ -410,7 +406,7 @@
                         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                     };
 
-                    await firebase.firestore().collection('timeEntries').doc(docId).set(timeEntry);
+                    await this.db.collection('timeEntries').doc(docId).set(timeEntry);
 
                     this.submittedWeeks[weekNumber] = true;
                     localStorage.setItem(`submittedWeeks_${this.userId}`, JSON.stringify(this.submittedWeeks));
@@ -421,27 +417,21 @@
             } catch (error) {
                 console.error('Error submitting week:', error);
                 if (error.code === 'permission-denied') {
-                    alert('Permission denied. Please make sure you are logged in properly.');
+                    alert('Permission denied. Please make sure you are logged in properly and try again.');
+                    // Force re-authentication
+                    window.location.reload();
                 } else {
                     alert('Error submitting week: ' + error.message);
                 }
             }
         }
 
-        async verifyAuth() {
-            const currentUser = firebase.auth().currentUser;
-            if (!currentUser) {
-                throw new Error('No user logged in');
-            }
-            return currentUser;
-        }
-
         async loadSubmittedEntries() {
             try {
-                const user = await this.verifyAuth();
-                const snapshot = await firebase.firestore()
+                const currentUser = await this.verifyAuth();
+                const snapshot = await this.db
                     .collection('timeEntries')
-                    .where('workerId', '==', user.uid)
+                    .where('workerId', '==', currentUser.uid)
                     .get();
 
                 snapshot.forEach(doc => {
@@ -469,8 +459,5 @@
 
     // Make it globally available
     window.TimeTrackingCalendar = TimeTrackingCalendar;
-    if (window.appState) {
-        window.appState.calendarLoaded = true;
-    }
     console.log('TimeTrackingCalendar loaded and registered');
 })();

@@ -51,3 +51,46 @@ function formatDate(date) {
         day: 'numeric'
     });
 }
+
+// Add normalization helper
+function normalizeDate(date) {
+    return new Date(Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        0, 0, 0, 0
+    ));
+}
+
+// Update getWeekDates to use normalized dates
+function getWeekDates(date) {
+    const mondayOfWeek = new Date(date);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    mondayOfWeek.setDate(diff);
+    
+    const weekDates = [];
+    for (let i = 0; i < 7; i++) {
+        const currentDate = new Date(mondayOfWeek);
+        currentDate.setDate(mondayOfWeek.getDate() + i);
+        weekDates.push(normalizeDate(currentDate));
+    }
+    return weekDates;
+}
+
+// Update checkIfCurrentWeek for more accurate comparison
+function checkIfCurrentWeek(date) {
+    const now = new Date();
+    const weekStart = normalizeDate(new Date(now.setDate(now.getDate() - now.getDay() + 1)));
+    const weekEnd = normalizeDate(new Date(now.setDate(weekStart.getDate() + 6)));
+    const normalizedDate = normalizeDate(date);
+    return normalizedDate >= weekStart && normalizedDate <= weekEnd;
+}
+
+// Update checkIfPastWeek for more accurate comparison
+function checkIfPastWeek(date) {
+    const now = new Date();
+    const mondayOfCurrentWeek = normalizeDate(new Date(now.setDate(now.getDate() - now.getDay() + 1)));
+    const normalizedDate = normalizeDate(date);
+    return normalizedDate < mondayOfCurrentWeek;
+}
