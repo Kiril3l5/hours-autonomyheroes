@@ -32,21 +32,24 @@ class AuthManager {
         }
     }
 
-    handleAuthStateChange(user) {
+    async handleAuthStateChange(user) {
         const authContainer = document.getElementById('authContainer');
         const calendarContainer = document.getElementById('calendarContainer');
 
         if (user) {
             console.log('User signed in:', user.uid);
             
-            // Update UI
-            authContainer.classList.remove('active');
-            calendarContainer.classList.add('active');
-            document.getElementById('userEmail').textContent = user.email;
+            try {
+                // Update UI
+                authContainer.classList.remove('active');
+                calendarContainer.classList.add('active');
+                document.getElementById('userEmail').textContent = user.email;
 
-            // Initialize calendar
-            if (!window.calendar) {
-                window.calendar = new TimeTrackingCalendar();
+                // Initialize calendar with retries
+                await this.initializeCalendar();
+            } catch (error) {
+                console.error('Error after login:', error);
+                this.showError('Error initializing calendar. Please refresh the page.');
             }
         } else {
             console.log('User signed out');
@@ -59,6 +62,32 @@ class AuthManager {
             // Clean up calendar
             if (window.calendar) {
                 window.calendar = null;
+            }
+        }
+    }
+
+    async initializeCalendar(retryCount = 0) {
+        const maxRetries = 3;
+        const retryDelay = 1000; // 1 second
+
+        try {
+            // Check if TimeTrackingCalendar exists
+            if (typeof TimeTrackingCalendar === 'undefined') {
+                throw new Error('Calendar component not loaded');
+            }
+
+            if (!window.calendar) {
+                window.calendar = new TimeTrackingCalendar();
+            }
+        } catch (error) {
+            console.error(`Calendar initialization error (attempt ${retryCount + 1}):`, error);
+            
+            if (retryCount < maxRetries) {
+                // Wait and retry
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                return this.initializeCalendar(retryCount + 1);
+            } else {
+                throw new Error('Failed to initialize calendar after multiple attempts');
             }
         }
     }
