@@ -14,11 +14,10 @@ featured_image: /images/demo/home.jpg
     <meta name="theme-color" content="#ffffff">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <!-- Security headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com;">
+    <!-- Security headers in head -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     
     <title>Hours Portal - Autonomy Heroes</title>
     
@@ -34,46 +33,6 @@ featured_image: /images/demo/home.jpg
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/auth.css">
-
-    <!-- App loading indicator -->
-    <style>
-        .app-loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        .app-loading .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        [aria-hidden="true"] {
-            display: none !important;
-        }
-        .auth-error {
-            background-color: #fee2e2;
-            border: 1px solid #ef4444;
-            color: #b91c1c;
-            padding: 0.75rem;
-            margin-bottom: 1rem;
-            border-radius: 0.375rem;
-        }
-    </style>
 </head>
 <body>
     <!-- Initial loading indicator -->
@@ -83,7 +42,134 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-    <!-- Rest of the HTML remains the same until the scripts section -->
+    <!-- Error boundary -->
+    <div id="errorBoundary" class="error-boundary" aria-hidden="true">
+        <h2>Something went wrong</h2>
+        <p id="errorMessage"></p>
+        <button onclick="window.location.reload()">Reload Application</button>
+    </div>
+
+    <!-- Auth Container -->
+    <div id="authContainer" class="auth-container active">
+        <h1 class="title">Hours Portal</h1>
+        
+        <div class="auth-tabs" role="tablist">
+            <button id="loginTab" class="auth-tab active" role="tab" aria-selected="true">Login</button>
+            <button id="registerTab" class="auth-tab" role="tab" aria-selected="false">Register</button>
+        </div>
+
+        <form id="loginForm" class="auth-form active">
+            <div class="form-group">
+                <label for="loginEmail">Work Email</label>
+                <input type="email" id="loginEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn-auth">Login</button>
+        </form>
+
+        <form id="registerForm" class="auth-form">
+            <div class="form-group">
+                <label for="regFirstName">First Name</label>
+                <input type="text" id="regFirstName" required>
+            </div>
+            <div class="form-group">
+                <label for="regLastName">Last Name</label>
+                <input type="text" id="regLastName" required>
+            </div>
+            <div class="form-group">
+                <label for="regEmail">Work Email</label>
+                <input type="email" id="regEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" required minlength="6">
+            </div>
+            <button type="submit" class="btn-auth">Register</button>
+        </form>
+    </div>
+
+    <!-- Calendar Container -->
+    <div id="calendarContainer" class="calendar-container">
+        <div class="user-info">
+            Logged in as <span id="userEmail"></span>
+            <button id="logoutBtn" class="btn-logout">Logout</button>
+        </div>
+        
+        <div class="container">
+            <div class="calendar-card">
+                <h1 class="title">Hours Portal</h1>
+                
+                <div class="month-nav">
+                    <button class="nav-btn" id="prevMonth" aria-label="Previous month">←</button>
+                    <span class="month-title" id="currentMonth"></span>
+                    <button class="nav-btn" id="nextMonth" aria-label="Next month">→</button>
+                </div>
+
+                <div class="calendar-grid" id="calendar">
+                    <div class="weekday">Mon</div>
+                    <div class="weekday">Tue</div>
+                    <div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div>
+                    <div class="weekday">Fri</div>
+                    <div class="weekday">Sat</div>
+                    <div class="weekday">Sun</div>
+                </div>
+
+                <div class="submit-section">
+                    <h2>Current Week Summary</h2>
+                    <div id="weekSummary"></div>
+                    <button id="submitWeek" class="btn">Submit Week for Approval</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Entry Modal -->
+    <div id="timeEntryModal" class="modal" role="dialog" aria-labelledby="modalDate">
+        <div class="modal-content">
+            <h2 id="modalDate"></h2>
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="timeOffCheck">
+                    Time off request
+                </label>
+                <div id="timeOffApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="managerApprovedCheck">
+                        Time off was approved by manager
+                    </label>
+                </div>
+            </div>
+
+            <div id="hoursSection">
+                <div class="form-group">
+                    <label for="hoursInput">Hours Worked</label>
+                    <input type="number" id="hoursInput" min="0" max="24" step="0.5" value="8">
+                </div>
+                <div id="overtimeApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="overtimeApprovedCheck">
+                        Overtime was approved by manager
+                    </label>
+                </div>
+                <div id="shortDayApproval" class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="shortDayApprovedCheck">
+                        Less than 8h was approved by manager
+                    </label>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button id="cancelEntry" class="btn-secondary">Cancel</button>
+                <button id="saveEntry" class="btn">Save</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
@@ -104,10 +190,10 @@ featured_image: /images/demo/home.jpg
         firebase.initializeApp(firebaseConfig);
     </script>
 
-    <!-- App scripts -->
+    <!-- App scripts with proper loading order and verification -->
     <script src="js/utils.js"></script>
     <script>
-        // Ensure utils are loaded before proceeding
+        // Verify utils loaded
         if (!window.DateUtils || !window.StringUtils || !window.DOMUtils) {
             throw new Error('Utils not loaded properly');
         }
@@ -162,7 +248,7 @@ featured_image: /images/demo/home.jpg
                 console.error('Error initializing application:', error);
                 const errorBoundary = document.getElementById('errorBoundary');
                 const errorMessage = document.getElementById('errorMessage');
-                errorMessage.textContent = 'Failed to initialize application. Please try reloading.';
+                errorMessage.textContent = 'Failed to initialize application. Please refresh the page.';
                 errorBoundary.removeAttribute('aria-hidden');
                 
                 // Hide loading indicator even if there's an error

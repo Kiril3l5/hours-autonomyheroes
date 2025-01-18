@@ -1,17 +1,45 @@
 // auth.js
+function verifyRequiredElements() {
+    const required = [
+        'authContainer',
+        'calendarContainer',
+        'userEmail',
+        'loginTab',
+        'registerTab',
+        'loginForm',
+        'registerForm',
+        'calendar',
+        'weekSummary',
+        'submitWeek'
+    ];
+
+    const missing = required.filter(id => !document.getElementById(id));
+    if (missing.length > 0) {
+        throw new Error(`Missing required elements: ${missing.join(', ')}`);
+    }
+}
 class AuthManager {
     constructor() {
-        // Initialize state
-        this.isInitialized = false;
-        this.auth = null;
-        this.db = null;
-        this.calendarInstance = null;
+        try {
+            // Verify DOM elements first
+            verifyRequiredElements();
 
-        // Initialize Firebase instances
-        this.initializeFirebase();
+            // Initialize state
+            this.isInitialized = false;
+            this.auth = null;
+            this.db = null;
+            this.calendarInstance = null;
 
-        // Bind UI event handlers
-        this.bindEvents();
+            // Initialize Firebase instances
+            this.initializeFirebase();
+
+            // Bind UI event handlers
+            this.bindEvents();
+        } catch (error) {
+            console.error('Error initializing AuthManager:', error);
+            this.showError('Failed to initialize application. Please refresh the page.');
+            throw error;
+        }
     }
 
     initializeFirebase() {
