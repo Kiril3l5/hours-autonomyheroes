@@ -13,21 +13,22 @@
                 throw new Error('User must be logged in to initialize calendar');
             }
             
-            // Initialize properties
-            this.currentDate = new Date();
-            this.timeEntries = {};
-            this.submittedWeeks = {};
-            this.userId = currentUser.uid;
-            this.db = firebase.firestore();
-                    
-                    // Initialize calendar
-                    this.initializeCalendar();
-                    console.log('TimeTrackingCalendar initialization complete');
-                } catch (error) {
-                    console.error('Error initializing calendar:', error);
-                    throw error;
-                }
+            try {
+                // Initialize properties
+                this.currentDate = new Date();
+                this.timeEntries = {};
+                this.submittedWeeks = {};
+                this.userId = currentUser.uid;
+                this.db = firebase.firestore();
+                
+                // Initialize calendar
+                this.initializeCalendar();
+                console.log('TimeTrackingCalendar initialization complete');
+            } catch (error) {
+                console.error('Error initializing calendar:', error);
+                throw error;
             }
+        }
 
         initializeCalendar() {
             // Initialize elements
@@ -431,7 +432,7 @@
         }
     }
 
- // Make it globally available
+   // Make it globally available
     window.TimeTrackingCalendar = TimeTrackingCalendar;
     console.log('TimeTrackingCalendar loaded and registered');
 })();

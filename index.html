@@ -42,15 +42,16 @@ featured_image: /images/demo/home.jpg
         firebase.initializeApp(firebaseConfig);
     </script>
 
-    <!-- Load our scripts in order -->
-    <script src="js/utils.js"></script>
-    <script src="js/modal.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/auth.js"></script>
+<!-- Load dependencies in correct order -->
+    <script src="js/utils.js" defer></script>
+    <script src="js/modal.js" defer></script>
+    <script src="js/calendar.js" defer></script>
+    <script src="js/auth.js" defer></script>
 
-    <!-- Initialize app -->
+    <!-- Initialize application -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing application...');
             if (!window.authManager) {
                 window.authManager = new AuthManager();
             }
@@ -183,28 +184,5 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-<!-- Load dependencies in correct order -->
-    <script src="js/utils.js"></script>
-    <script>
-        // Wait for utils to load
-        window.addEventListener('load', () => {
-            // Load modal.js first
-            const modalScript = document.createElement('script');
-            modalScript.src = 'js/modal.js';
-            modalScript.onload = () => {
-                // Only load calendar.js after modal.js is loaded
-                const calendarScript = document.createElement('script');
-                calendarScript.src = 'js/calendar.js';
-                calendarScript.onload = () => {
-                    // Finally load auth.js
-                    const authScript = document.createElement('script');
-                    authScript.src = 'js/auth.js';
-                    document.body.appendChild(authScript);
-                };
-                document.body.appendChild(calendarScript);
-            };
-            document.body.appendChild(modalScript);
-        });
-    </script>
 </body>
 </html>
