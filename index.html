@@ -23,6 +23,39 @@ featured_image: /images/demo/home.jpg
     <link rel="stylesheet" href="css/auth.css">
 </head>
 <body>
+<!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+
+    <!-- Initialize Firebase -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+            authDomain: "autonomy-heroes.firebaseapp.com",
+            projectId: "autonomy-heroes",
+            storageBucket: "autonomy-heroes.firebasestorage.app",
+            messagingSenderId: "266526530869",
+            appId: "1:266526530869:web:ea95143735be497ca8007c"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <!-- Load our scripts in order -->
+    <script src="js/utils.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/auth.js"></script>
+
+    <!-- Initialize app -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!window.authManager) {
+                window.authManager = new AuthManager();
+            }
+        });
+    </script>
     <!-- Auth Container -->
     <div id="authContainer" class="auth-container active">
         <h1 class="title">Hours Portal</h1>
@@ -171,66 +204,6 @@ featured_image: /images/demo/home.jpg
                 document.body.appendChild(calendarScript);
             };
             document.body.appendChild(modalScript);
-        });
-    </script>
-
-<!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
-
-    <!-- Initialize Firebase -->
-    <script>
-        if (!window.firebaseInitialized) {
-            const firebaseConfig = {
-                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-                authDomain: "autonomy-heroes.firebaseapp.com",
-                projectId: "autonomy-heroes",
-                storageBucket: "autonomy-heroes.firebasestorage.app",
-                messagingSenderId: "266526530869",
-                appId: "1:266526530869:web:ea95143735be497ca8007c"
-            };
-            
-            firebase.initializeApp(firebaseConfig);
-            window.firebaseInitialized = true;
-        }
-    </script>
-
-    <!-- Application Scripts -->
-    <script>
-        // Load scripts in sequence
-        const loadScripts = async () => {
-            const scripts = [
-                'js/utils.js',
-                'js/modal.js',
-                'js/calendar.js',
-                'js/auth.js'
-            ];
-
-            for (const script of scripts) {
-                await new Promise((resolve, reject) => {
-                    const scriptEl = document.createElement('script');
-                    scriptEl.src = script;
-                    scriptEl.onload = resolve;
-                    scriptEl.onerror = reject;
-                    document.body.appendChild(scriptEl);
-                });
-            }
-
-            // Initialize app after all scripts are loaded
-            console.log('All scripts loaded, initializing application...');
-            if (!window.authManager) {
-                window.authManager = new AuthManager();
-            }
-        };
-
-        // Start loading when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, loading scripts...');
-            loadScripts().catch(error => {
-                console.error('Error loading scripts:', error);
-                alert('Error loading application. Please refresh the page.');
-            });
         });
     </script>
 </body>

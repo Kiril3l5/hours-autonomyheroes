@@ -1,74 +1,24 @@
 // calendar.js
-// calendar.js
 (function() {
     console.log('Calendar module loading...');
     
-    // Wait for dependencies with async retry
-    const waitForDependencies = async () => {
-        let retryCount = 0;
-        const maxRetries = 10;
-        const retryDelay = 500; // ms
-
-        const checkDeps = () => {
-            if (!window.firebase) {
-                throw new Error('Firebase not loaded');
+    class TimeTrackingCalendar {
+        constructor() {
+            console.log('TimeTrackingCalendar constructor called...');
+            
+            // Check user
+            const currentUser = firebase.auth().currentUser;
+            if (!currentUser) {
+                console.error('No user logged in');
+                throw new Error('User must be logged in to initialize calendar');
             }
             
-            if (!window.TimeEntryModal) {
-                throw new Error('TimeEntryModal not loaded');
-            }
-
-            if (typeof formatDate !== 'function') {
-                throw new Error('Utils not loaded');
-            }
-
-            return true;
-        };
-
-        while (retryCount < maxRetries) {
-            try {
-                return checkDeps();
-            } catch (error) {
-                console.log(`Dependency check failed (attempt ${retryCount + 1}/${maxRetries}): ${error.message}`);
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-                retryCount++;
-            }
-        }
-
-        throw new Error('Dependencies not available after maximum retries');
-    };
-
-    // Initialize calendar module
-    const init = async () => {
-        try {
-            await waitForDependencies();
-            console.log('All dependencies loaded, initializing calendar module...');
-            defineCalendarClass();
-        } catch (error) {
-            console.error('Failed to initialize calendar module:', error);
-        }
-    };
-
-    // Define the calendar class
-    const defineCalendarClass = () => {
-        class TimeTrackingCalendar {
-            constructor() {
-                console.log('TimeTrackingCalendar constructor called...');
-                
-                // Check user
-                const currentUser = firebase.auth().currentUser;
-                if (!currentUser) {
-                    console.error('No user logged in');
-                    throw new Error('User must be logged in to initialize calendar');
-                }
-                
-                try {
-                    // Initialize properties
-                    this.currentDate = new Date();
-                    this.timeEntries = {};
-                    this.submittedWeeks = {};
-                    this.userId = currentUser.uid;
-                    this.db = firebase.firestore();
+            // Initialize properties
+            this.currentDate = new Date();
+            this.timeEntries = {};
+            this.submittedWeeks = {};
+            this.userId = currentUser.uid;
+            this.db = firebase.firestore();
                     
                     // Initialize calendar
                     this.initializeCalendar();
@@ -481,11 +431,7 @@
         }
     }
 
-     // Make it globally available
-        window.TimeTrackingCalendar = TimeTrackingCalendar;
-        console.log('TimeTrackingCalendar class registered');
-    };
-
-    // Start initialization
-    init();
+ // Make it globally available
+    window.TimeTrackingCalendar = TimeTrackingCalendar;
+    console.log('TimeTrackingCalendar loaded and registered');
 })();
