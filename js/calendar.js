@@ -292,7 +292,47 @@
                 console.error('Error submitting week:', error);
                 throw error;
             }
+			 try {
+        // Prepare time entry data
+        const weekData = this.prepareWeekData();
+
+        // Try to submit
+        const response = await fetch('/timeEntries', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(weekData)
+        });
+
+        const result = await response.json();
+
+        // Handle offline storage
+        if (result.offline) {
+            this.showOfflineNotification();
+            // Request background sync
+            if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.sync.register('sync-timeentries');
+            }
         }
+
+        return result;
+    } catch (error) {
+        console.error('Error submitting week:', error);
+        throw error;
+    }
+}
+        }
+		
+	// Add offline notification
+showOfflineNotification() {
+    const notification = document.createElement('div');
+    notification.className = 'offline-notification';
+    notification.textContent = 'You are offline. Entry saved and will sync when online.';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
 
         async prepareWeekSubmission() {
             const today = new Date();
