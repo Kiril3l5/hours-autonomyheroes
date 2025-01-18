@@ -10,179 +10,320 @@ featured_image: /images/demo/home.jpg
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Hours Portal - Time tracking and management system">
+    <meta name="theme-color" content="#ffffff">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    <!-- Security headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
     <title>Hours Portal - Autonomy Heroes</title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
+    <link rel="manifest" href="/manifest.json">
     
-    <!-- Font -->
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
     
     <!-- Styles -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/auth.css">
+
+    <!-- App loading indicator -->
+    <style>
+        .app-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .app-loading .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        [aria-hidden="true"] {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
-<!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+    <!-- Initial loading indicator -->
+    <div id="appLoading" class="app-loading">
+        <div class="spinner" role="status">
+            <span class="sr-only">Loading application...</span>
+        </div>
+    </div>
 
-    <!-- Initialize Firebase -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-            authDomain: "autonomy-heroes.firebaseapp.com",
-            projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.firebasestorage.app",
-            messagingSenderId: "266526530869",
-            appId: "1:266526530869:web:ea95143735be497ca8007c"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-    </script>
+    <!-- Error boundary -->
+    <div id="errorBoundary" class="error-boundary" aria-hidden="true">
+        <h2>Something went wrong</h2>
+        <p id="errorMessage"></p>
+        <button onclick="window.location.reload()">Reload Application</button>
+    </div>
 
-<!-- Load dependencies in correct order -->
-    <script src="js/utils.js" defer></script>
-    <script src="js/modal.js" defer></script>
-    <script src="js/calendar.js" defer></script>
-    <script src="js/auth.js" defer></script>
-
-    <!-- Initialize application -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, initializing application...');
-            if (!window.authManager) {
-                window.authManager = new AuthManager();
-            }
-        });
-    </script>
     <!-- Auth Container -->
-    <div id="authContainer" class="auth-container active">
+    <div id="authContainer" class="auth-container" aria-hidden="true">
         <h1 class="title">Hours Portal</h1>
         
-        <div class="auth-tabs">
-            <button id="loginTab" class="auth-tab active">Login</button>
-            <button id="registerTab" class="auth-tab">Register</button>
+        <!-- Auth tabs with proper ARIA labels -->
+        <div class="auth-tabs" role="tablist">
+            <button id="loginTab" class="auth-tab active" role="tab" 
+                    aria-selected="true" aria-controls="loginForm">
+                Login
+            </button>
+            <button id="registerTab" class="auth-tab" role="tab" 
+                    aria-selected="false" aria-controls="registerForm">
+                Register
+            </button>
         </div>
 
         <!-- Login Form -->
-        <form id="loginForm" class="auth-form active">
+        <form id="loginForm" class="auth-form active" aria-labelledby="loginTab">
             <div class="form-group">
                 <label for="loginEmail">Work Email</label>
-                <input type="email" id="loginEmail" autocomplete="username" required>
+                <input type="email" id="loginEmail" name="email"
+                       autocomplete="username" required
+                       pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                       aria-required="true">
             </div>
             <div class="form-group">
                 <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" autocomplete="current-password" required>
+                <div class="password-input">
+                    <input type="password" id="loginPassword" name="password"
+                           autocomplete="current-password" required
+                           minlength="8" aria-required="true">
+                    <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                        <span class="icon-eye" aria-hidden="true"></span>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="btn-auth">Login</button>
         </form>
 
         <!-- Register Form -->
-        <form id="registerForm" class="auth-form">
+        <form id="registerForm" class="auth-form" aria-labelledby="registerTab">
             <div class="form-group">
                 <label for="regFirstName">First Name</label>
-                <input type="text" id="regFirstName" autocomplete="given-name" required>
+                <input type="text" id="regFirstName" name="firstName"
+                       autocomplete="given-name" required
+                       pattern="[A-Za-z-']+" aria-required="true">
             </div>
             <div class="form-group">
                 <label for="regLastName">Last Name</label>
-                <input type="text" id="regLastName" autocomplete="family-name" required>
+                <input type="text" id="regLastName" name="lastName"
+                       autocomplete="family-name" required
+                       pattern="[A-Za-z-']+" aria-required="true">
             </div>
             <div class="form-group">
                 <label for="regEmail">Work Email</label>
-                <input type="email" id="regEmail" autocomplete="username" required>
+                <input type="email" id="regEmail" name="email"
+                       autocomplete="username" required
+                       pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+                       aria-required="true">
             </div>
             <div class="form-group">
                 <label for="regPassword">Password</label>
-                <input type="password" id="regPassword" autocomplete="new-password" required>
+                <div class="password-input">
+                    <input type="password" id="regPassword" name="password"
+                           autocomplete="new-password" required
+                           minlength="8" aria-required="true">
+                    <button type="button" class="toggle-password" aria-label="Toggle password visibility">
+                        <span class="icon-eye" aria-hidden="true"></span>
+                    </button>
+                </div>
+                <div class="password-requirements" aria-live="polite">
+                    Password must contain:
+                    <ul>
+                        <li data-requirement="length">At least 8 characters</li>
+                        <li data-requirement="uppercase">One uppercase letter</li>
+                        <li data-requirement="lowercase">One lowercase letter</li>
+                        <li data-requirement="number">One number</li>
+                        <li data-requirement="special">One special character</li>
+                    </ul>
+                </div>
             </div>
             <button type="submit" class="btn-auth">Register</button>
         </form>
     </div>
 
     <!-- Calendar Container -->
-    <div id="calendarContainer" class="calendar-container">
-        <div class="user-info">
-            Logged in as <span id="userEmail"></span>
-            <button id="logoutBtn" class="btn-logout">Logout</button>
-        </div>
+    <div id="calendarContainer" class="calendar-container" aria-hidden="true">
+        <header class="app-header">
+            <div class="user-info">
+                Logged in as <span id="userEmail"></span>
+                <button id="logoutBtn" class="btn-logout">Logout</button>
+            </div>
+        </header>
         
-        <div class="container">
+        <main class="container">
             <div class="calendar-card">
                 <h1 class="title">Hours Portal</h1>
                 
-                <div class="month-nav">
-                    <button class="nav-btn" id="prevMonth">←</button>
-                    <span class="month-title" id="currentMonth"></span>
-                    <button class="nav-btn" id="nextMonth">→</button>
+                <nav class="month-nav" role="navigation" aria-label="Calendar navigation">
+                    <button class="nav-btn" id="prevMonth" aria-label="Previous month">←</button>
+                    <span class="month-title" id="currentMonth" aria-live="polite"></span>
+                    <button class="nav-btn" id="nextMonth" aria-label="Next month">→</button>
+                </nav>
+
+                <div class="calendar-grid" id="calendar" role="grid" aria-label="Time tracking calendar">
+                    <div class="weekday" role="columnheader">Mon</div>
+                    <div class="weekday" role="columnheader">Tue</div>
+                    <div class="weekday" role="columnheader">Wed</div>
+                    <div class="weekday" role="columnheader">Thu</div>
+                    <div class="weekday" role="columnheader">Fri</div>
+                    <div class="weekday" role="columnheader">Sat</div>
+                    <div class="weekday" role="columnheader">Sun</div>
                 </div>
 
-                <div class="calendar-grid" id="calendar">
-                    <div class="weekday">Mon</div>
-                    <div class="weekday">Tue</div>
-                    <div class="weekday">Wed</div>
-                    <div class="weekday">Thu</div>
-                    <div class="weekday">Fri</div>
-                    <div class="weekday">Sat</div>
-                    <div class="weekday">Sun</div>
-                </div>
-
-                <div class="submit-section">
-                    <h3>Current Week Summary</h3>
-                    <div id="weekSummary"></div>
+                <section class="submit-section">
+                    <h2>Current Week Summary</h2>
+                    <div id="weekSummary" aria-live="polite"></div>
                     <button id="submitWeek" class="btn">Submit Week for Approval</button>
-                </div>
+                </section>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Time Entry Modal -->
-    <div id="timeEntryModal" class="modal">
+    <div id="timeEntryModal" class="modal" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="modal-content">
-            <h2 id="modalDate"></h2>
+            <h2 id="modalDate" class="modal-title"></h2>
             
-            <div class="form-group">
-                <label for="timeOffCheck">
-                    <input type="checkbox" id="timeOffCheck" name="timeOff">
-                    <span>Time off request</span>
-                </label>
-                
-                <div id="timeOffApproval" class="checkbox-group" style="display: none;">
-                    <label for="managerApprovedCheck">
-                        <input type="checkbox" id="managerApprovedCheck" name="managerApproved">
-                        <span>Time off was requested in advance and approved by manager</span>
-                    </label>
-                </div>
-            </div>
-
-            <div id="hoursSection">
+            <form id="timeEntryForm">
                 <div class="form-group">
-                    <label for="hoursInput">Hours Worked</label>
-                    <input type="number" id="hoursInput" name="hours" value="8" min="0" max="24">
-                </div>
-
-                <div id="overtimeApproval" class="checkbox-group" style="display: none;">
-                    <label for="overtimeApprovedCheck">
-                        <input type="checkbox" id="overtimeApprovedCheck" name="overtimeApproved">
-                        <span>Overtime was approved by manager</span>
+                    <label for="timeOffCheck" class="checkbox-label">
+                        <input type="checkbox" id="timeOffCheck" name="timeOff">
+                        Time off request
                     </label>
+                    
+                    <div id="timeOffApproval" class="checkbox-group" aria-hidden="true">
+                        <label for="managerApprovedCheck" class="checkbox-label">
+                            <input type="checkbox" id="managerApprovedCheck" name="managerApproved">
+                            Time off was requested in advance and approved by manager
+                        </label>
+                    </div>
                 </div>
 
-                <div id="shortDayApproval" class="checkbox-group" style="display: none;">
-                    <label for="shortDayApprovedCheck">
-                        <input type="checkbox" id="shortDayApprovedCheck" name="shortDayApproved">
-                        <span>Manager is aware of less than 8h work day</span>
-                    </label>
-                </div>
-            </div>
+                <div id="hoursSection">
+                    <div class="form-group">
+                        <label for="hoursInput">Hours Worked</label>
+                        <input type="number" id="hoursInput" name="hours"
+                               min="0" max="24" step="0.5" value="8"
+                               aria-describedby="hoursHint">
+                        <small id="hoursHint">Enter hours worked (0-24)</small>
+                    </div>
 
-            <div class="actions">
-                <button type="button" id="cancelEntry" class="btn btn-secondary">Cancel</button>
-                <button type="button" id="saveEntry" class="btn">Save</button>
-            </div>
+                    <div id="overtimeApproval" class="checkbox-group" aria-hidden="true">
+                        <label for="overtimeApprovedCheck" class="checkbox-label">
+                            <input type="checkbox" id="overtimeApprovedCheck" name="overtimeApproved">
+                            Overtime was approved by manager
+                        </label>
+                    </div>
+
+                    <div id="shortDayApproval" class="checkbox-group" aria-hidden="true">
+                        <label for="shortDayApprovedCheck" class="checkbox-label">
+                            <input type="checkbox" id="shortDayApprovedCheck" name="shortDayApproved">
+                            Manager is aware of less than 8h work day
+                        </label>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button type="button" id="cancelEntry" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" id="saveEntry" class="btn">Save</button>
+                </div>
+            </form>
         </div>
     </div>
 
+    <!-- Scripts -->
+    <script>
+        // Initialize loading state
+        window.addEventListener('load', () => {
+            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+        });
+
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            const errorBoundary = document.getElementById('errorBoundary');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = 'An unexpected error occurred. Please try reloading the application.';
+            errorBoundary.removeAttribute('aria-hidden');
+        });
+
+        // Initialize Firebase with environment-specific config
+        const firebaseConfig = {
+            apiKey: process.env.FIREBASE_API_KEY,
+            authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: process.env.FIREBASE_APP_ID
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <!-- Firebase -->
+    <script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+
+    <!-- App scripts -->
+    <script defer src="js/utils.js"></script>
+    <script defer src="js/modal.js"></script>
+    <script defer src="js/calendar.js"></script>
+    <script defer src="js/auth.js"></script>
+
+    <!-- Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(error => {
+                    console.warn('ServiceWorker registration failed:', error);
+                });
+            });
+        }
+    </script>
+
+    <!-- Initialize application -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, initializing application...');
+            try {
+                if (!window.authManager) {
+                    window.authManager = new AuthManager();
+                }
+            } catch (error) {
+                console.error('Error initializing application:', error);
+                const errorBoundary = document.getElementById('errorBoundary');
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = 'Failed to initialize application. Please try reloading.';
+                errorBoundary.removeAttribute('aria-hidden');
+            }
+        });
+    </script>
 </body>
 </html>
