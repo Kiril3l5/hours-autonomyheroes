@@ -172,105 +172,97 @@ featured_image: /images/demo/home.jpg
     </div>
 
     <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js" defer></script>
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js" defer></script>
 
-    <!-- Initialize Firebase -->
-    <script>
-        const firebaseConfig = {
+<!-- Error monitoring needs to load first -->
+<script src="js/error-monitoring.js"></script>
+
+<!-- App scripts with correct loading order -->
+<script src="js/utils.js" defer></script>
+<script src="js/modal.js" defer></script>
+<script src="js/calendar.js" defer></script>
+<script src="js/auth.js" defer></script>
+
+<!-- Initialize app -->
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Initialize Firebase first
+        firebase.initializeApp({
             apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
             authDomain: "autonomy-heroes.firebaseapp.com",
             projectId: "autonomy-heroes",
             storageBucket: "autonomy-heroes.appspot.com",
             messagingSenderId: "266526530869",
             appId: "1:266526530869:web:ea95143735be497ca8007c"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-    </script>
+        });
 
-    <!-- App scripts with proper loading order and verification -->
-    <script src="js/utils.js"></script>
-    <script>
-        // Verify utils loaded
-        if (!window.DateUtils || !window.StringUtils || !window.DOMUtils) {
-            throw new Error('Utils not loaded properly');
-        }
-    </script>
-    
-    <script src="js/modal.js"></script>
-    <script>
-        // Verify modal loaded
-        if (!window.TimeEntryModal) {
-            throw new Error('TimeEntryModal not loaded properly');
-        }
-    </script>
-    
-    <script src="js/calendar.js"></script>
-    <script>
-        // Verify calendar loaded
-        if (!window.TimeTrackingCalendar) {
-            throw new Error('TimeTrackingCalendar not loaded properly');
-        }
-    </script>
-    
-    <script src="js/auth.js"></script>
-    <script>
-        // Verify auth loaded
-        if (!window.AuthManager) {
-            throw new Error('AuthManager not loaded properly');
-        }
-    </script>
-
-    <!-- Initialize app -->
-    <script>
-        let authManager = null;
-        
-        async function initializeApp() {
-            try {
-                // Wait for DOM content to be fully loaded
-                if (document.readyState !== 'complete') {
-                    await new Promise(resolve => {
-                        window.addEventListener('load', resolve);
-                    });
+        // Wait for all scripts to load
+        await Promise.all([
+            new Promise(resolve => {
+                if (window.DateUtils && window.StringUtils && window.DOMUtils) {
+                    resolve();
+                } else {
+                    window.addEventListener('load', resolve);
                 }
-
-                // Create auth manager instance
-                if (!authManager) {
-                    authManager = new AuthManager();
+            }),
+            new Promise(resolve => {
+                if (window.TimeEntryModal) {
+                    resolve();
+                } else {
+                    const checkModal = setInterval(() => {
+                        if (window.TimeEntryModal) {
+                            clearInterval(checkModal);
+                            resolve();
+                        }
+                    }, 100);
                 }
+            }),
+            new Promise(resolve => {
+                if (window.TimeTrackingCalendar) {
+                    resolve();
+                } else {
+                    const checkCalendar = setInterval(() => {
+                        if (window.TimeTrackingCalendar) {
+                            clearInterval(checkCalendar);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            })
+        ]);
 
-                // Hide loading indicator
-                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+        // Initialize auth manager
+        window.authManager = new AuthManager();
+        
+        // Hide loading indicator
+        document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
 
-            } catch (error) {
-                console.error('Error initializing application:', error);
-                const errorBoundary = document.getElementById('errorBoundary');
-                const errorMessage = document.getElementById('errorMessage');
-                errorMessage.textContent = 'Failed to initialize application. Please refresh the page.';
-                errorBoundary.removeAttribute('aria-hidden');
-                
-                // Hide loading indicator even if there's an error
-                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-            }
-        }
+    } catch (error) {
+        console.error('Error initializing application:', error);
+        const errorBoundary = document.getElementById('errorBoundary');
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = 'Failed to initialize application. Please refresh the page.';
+        errorBoundary.removeAttribute('aria-hidden');
+        
+        document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+    }
+});
 
-        // Start initialization
-        initializeApp();
-
-        // Register service worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => {
-                        console.log('ServiceWorker registered:', registration.scope);
-                    })
-                    .catch(error => {
-                        console.warn('ServiceWorker registration failed:', error);
-                    });
+// Register service worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+                console.log('ServiceWorker registered:', registration.scope);
+            })
+            .catch(error => {
+                console.warn('ServiceWorker registration failed:', error);
             });
-        }
-    </script>
+    });
+}
+</script>
 </body>
 </html>
