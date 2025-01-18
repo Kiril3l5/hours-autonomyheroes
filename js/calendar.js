@@ -1,9 +1,8 @@
 // calendar.js
-(function() {
-    class TimeTrackingCalendar {
-        constructor() {
-            console.log('Initializing TimeTrackingCalendar...');
-            
+class TimeTrackingCalendar {
+    constructor() {
+        console.log('Initializing TimeTrackingCalendar...');
+        try {
             // Verify environment and dependencies
             this.verifyEnvironment();
             
@@ -17,7 +16,11 @@
             this.initializeCalendar();
             
             console.log('TimeTrackingCalendar initialization complete');
+        } catch (error) {
+            console.error('Calendar initialization error:', error);
+            throw error;
         }
+    }
 
         verifyEnvironment() {
             // Check user authentication
@@ -733,7 +736,5 @@ showOfflineNotification() {
         }
     }
 
-    // Make TimeTrackingCalendar available globally
-    window.TimeTrackingCalendar = TimeTrackingCalendar;
-    console.log('TimeTrackingCalendar loaded and registered');
-})();
+// Export globally
+window.TimeTrackingCalendar = TimeTrackingCalendar;
