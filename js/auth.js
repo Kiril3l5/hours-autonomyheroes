@@ -1,193 +1,157 @@
 // auth.js
-(function() {
-    class AuthManager {
-        constructor() {
-            // Initialize state
-            this.isInitialized = false;
-            this.initializationAttempts = 0;
-            this.maxInitAttempts = 3;
-            this.initializationDelay = 1000; // 1 second
+class AuthManager {
+    constructor() {
+        // Initialize state
+        this.isInitialized = false;
+        this.auth = null;
+        this.db = null;
 
-            // Cache DOM elements
-            this.elements = {
-                authContainer: null,
-                calendarContainer: null,
-                userEmail: null,
-                loginTab: null,
-                registerTab: null,
-                loginForm: null,
-                registerForm: null,
-                logoutBtn: null
-            };
+        // Initialize Firebase instances
+        this.initializeFirebase();
 
-            // Bind methods
-            this.handleAuthStateChange = this.handleAuthStateChange.bind(this);
-            this.initialize = this.initialize.bind(this);
-            this.bindEvents = this.bindEvents.bind(this);
+        // Bind UI event handlers
+        this.bindEvents();
+    }
 
-            // Start initialization
-            this.initialize();
-        }
-
-        async initialize() {
-            console.log('Initializing AuthManager...');
+    initializeFirebase() {
+        try {
+            this.auth = firebase.auth();
+            this.db = firebase.firestore();
             
-            try {
-                // Check if Firebase is available
-                if (!window.firebase) {
-                    throw new Error('Firebase not loaded');
-                }
-
-                // Initialize Firebase instances
-                this.auth = firebase.auth();
-                this.db = firebase.firestore();
-
-                // Initialize DOM elements
-                this.initializeElements();
-
-                // Set up loading indicator
-                this.setupLoadingIndicator();
-
-                // Set persistence and initialize auth state observer
-                await this.setupPersistence();
-                
-                // Bind UI events
-                this.bindEvents();
-                
-                this.isInitialized = true;
-                console.log('AuthManager initialization complete');
-            } catch (error) {
-                console.error('Error during initialization:', error);
-                
-                if (this.initializationAttempts < this.maxInitAttempts) {
-                    this.initializationAttempts++;
-                    console.log(`Retrying initialization (${this.initializationAttempts}/${this.maxInitAttempts})...`);
-                    setTimeout(this.initialize, this.initializationDelay);
-                } else {
-                    this.handleFatalError('Failed to initialize authentication system');
-                }
-            }
-        }
-
-        initializeElements() {
-            this.elements = {
-                authContainer: document.getElementById('authContainer'),
-                calendarContainer: document.getElementById('calendarContainer'),
-                userEmail: document.getElementById('userEmail'),
-                loginTab: document.getElementById('loginTab'),
-                registerTab: document.getElementById('registerTab'),
-                loginForm: document.getElementById('loginForm'),
-                registerForm: document.getElementById('registerForm'),
-                logoutBtn: document.getElementById('logoutBtn')
-            };
-
-            // Verify required elements exist
-            const missingElements = Object.entries(this.elements)
-                .filter(([key, element]) => !element)
-                .map(([key]) => key);
-
-            if (missingElements.length > 0) {
-                throw new Error(`Missing required DOM elements: ${missingElements.join(', ')}`);
-            }
-        }
-
-        setupLoadingIndicator() {
-            // Create loading overlay
-            const overlay = document.createElement('div');
-            overlay.id = 'loadingOverlay';
-            overlay.style.display = 'none';
-            overlay.innerHTML = '<div class="spinner"></div>';
-            document.body.appendChild(overlay);
-        }
-
-        showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-
-        hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
-        async setupPersistence() {
-            try {
-                await this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-                console.log('Auth persistence set to LOCAL');
-                
-                // Set up auth state observer
-                this.auth.onAuthStateChanged(this.handleAuthStateChange);
-            } catch (error) {
-                console.error('Error setting persistence:', error);
-                throw error;
-            }
-        }
-
-        handleFatalError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'fatal-error';
-            errorDiv.textContent = message;
-            document.body.prepend(errorDiv);
-        }
-
-        async handleAuthStateChange(user) {
-            try {
-                this.showLoading();
-
-                if (user) {
-                    console.log('User signed in:', user.uid);
-                    
-                    // Verify Firestore access
-                    await this.verifyFirestoreAccess(user.uid);
-                    
-                    // Update UI for authenticated state
-                    this.updateUIForAuthenticatedUser(user);
-
-                    // Initialize calendar if needed
-                    await this.initializeCalendar();
-                } else {
-                    console.log('User signed out');
-                    this.updateUIForSignedOutUser();
-                }
-            } catch (error) {
-                console.error('Error in auth state change:', error);
-                this.handleAuthError(error);
-            } finally {
-                this.hideLoading();
-            }
-        }
-
-        async verifyFirestoreAccess(uid) {
-            try {
-                const docRef = await this.db.collection('workers').doc(uid).get();
-                if (!docRef.exists) {
-                    throw new Error('User document not found');
-                }
-            } catch (error) {
-                console.error('Firestore access error:', error);
-                throw new Error('Unable to verify user access');
-            }
-        }
-
-        updateUIForAuthenticatedUser(user) {
-            this.elements.authContainer.classList.remove('active');
-            this.elements.calendarContainer.classList.add('active');
-            this.elements.userEmail.textContent = user.email;
-        }
-
-        updateUIForSignedOutUser() {
-            this.elements.authContainer.classList.add('active');
-            this.elements.calendarContainer.classList.remove('active');
-            this.elements.userEmail.textContent = '';
+            // Set up auth state observer
+            this.auth.onAuthStateChanged((user) => this.handleAuthStateChange(user));
             
-            // Clean up calendar instance
+            // Set persistence to local
+            this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => console.log('Auth persistence set to LOCAL'))
+                .catch(error => console.error('Error setting persistence:', error));
+
+        } catch (error) {
+            console.error('Error initializing Firebase:', error);
+            this.showError('Failed to initialize authentication system');
+        }
+    }
+
+    handleAuthStateChange(user) {
+        const authContainer = document.getElementById('authContainer');
+        const calendarContainer = document.getElementById('calendarContainer');
+
+        if (user) {
+            console.log('User signed in:', user.uid);
+            
+            // Update UI
+            authContainer.classList.remove('active');
+            calendarContainer.classList.add('active');
+            document.getElementById('userEmail').textContent = user.email;
+
+            // Initialize calendar
+            if (!window.calendar) {
+                window.calendar = new TimeTrackingCalendar();
+            }
+        } else {
+            console.log('User signed out');
+            
+            // Update UI
+            authContainer.classList.add('active');
+            calendarContainer.classList.remove('active');
+            document.getElementById('userEmail').textContent = '';
+            
+            // Clean up calendar
             if (window.calendar) {
                 window.calendar = null;
             }
         }
-
-        // ... [Rest of the auth.js code remains the same]
     }
 
-    // Make AuthManager available globally
-    window.AuthManager = AuthManager;
-    console.log('AuthManager loaded and registered');
-})();
+    bindEvents() {
+        // Tab switching
+        document.getElementById('loginTab')?.addEventListener('click', () => {
+            document.getElementById('loginTab').classList.add('active');
+            document.getElementById('registerTab').classList.remove('active');
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('registerForm').classList.remove('active');
+        });
+
+        document.getElementById('registerTab')?.addEventListener('click', () => {
+            document.getElementById('registerTab').classList.add('active');
+            document.getElementById('loginTab').classList.remove('active');
+            document.getElementById('registerForm').classList.add('active');
+            document.getElementById('loginForm').classList.remove('active');
+        });
+
+        // Login form
+        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const email = document.getElementById('loginEmail').value.trim();
+                const password = document.getElementById('loginPassword').value;
+                await this.auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                console.error('Login error:', error);
+                this.showError(this.getAuthErrorMessage(error));
+            }
+        });
+
+        // Register form
+        document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                const email = document.getElementById('regEmail').value.trim();
+                const password = document.getElementById('regPassword').value;
+                const firstName = document.getElementById('regFirstName').value.trim();
+                const lastName = document.getElementById('regLastName').value.trim();
+
+                const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
+                await this.db.collection('workers').doc(userCredential.user.uid).set({
+                    firstName,
+                    lastName,
+                    email,
+                    role: 'worker',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    status: 'active'
+                });
+            } catch (error) {
+                console.error('Registration error:', error);
+                this.showError(this.getAuthErrorMessage(error));
+            }
+        });
+
+        // Logout
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            try {
+                await this.auth.signOut();
+            } catch (error) {
+                console.error('Logout error:', error);
+                this.showError('Error during logout. Please try again.');
+            }
+        });
+    }
+
+    showError(message) {
+        const container = document.querySelector('.auth-container');
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'auth-error';
+        errorDiv.textContent = message;
+        container.prepend(errorDiv);
+        setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    getAuthErrorMessage(error) {
+        switch (error.code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+                return 'Invalid email or password';
+            case 'auth/email-already-in-use':
+                return 'This email is already registered';
+            case 'auth/weak-password':
+                return 'Password is too weak';
+            case 'auth/invalid-email':
+                return 'Invalid email address';
+            default:
+                return error.message;
+        }
+    }
+}
+
+// Make AuthManager available globally
+window.AuthManager = AuthManager;
