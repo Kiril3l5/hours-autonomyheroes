@@ -2,14 +2,37 @@
 (function() {
     console.log('Calendar module loading...');
     
-    // Check dependencies
-    if (!window.firebase) {
-        console.error('Firebase not loaded');
-        return;
-    }
+    // Check dependencies with retry
+    let retryCount = 0;
+    const maxRetries = 5;
     
-    if (!window.TimeEntryModal) {
-        console.error('TimeEntryModal not loaded');
+    function checkDependencies() {
+        if (!window.firebase) {
+            console.error('Firebase not loaded');
+            return false;
+        }
+        
+        if (!window.TimeEntryModal) {
+            if (retryCount < maxRetries) {
+                retryCount++;
+                console.log(`TimeEntryModal not loaded, retrying (${retryCount}/${maxRetries})...`);
+                setTimeout(checkDependencies, 500);
+                return false;
+            }
+            console.error('TimeEntryModal not loaded after retries');
+            return false;
+        }
+
+        if (typeof formatDate !== 'function') {
+            console.error('Utils not loaded');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Only proceed if dependencies are available
+    if (!checkDependencies()) {
         return;
     }
 

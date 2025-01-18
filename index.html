@@ -155,11 +155,29 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-    <!-- Load dependencies in order -->
+<!-- Load dependencies in correct order -->
     <script src="js/utils.js"></script>
-    <script src="js/modal.js"></script>
-    <script src="js/calendar.js"></script>
-    <script src="js/auth.js"></script>
+    <script>
+        // Wait for utils to load
+        window.addEventListener('load', () => {
+            // Load modal.js first
+            const modalScript = document.createElement('script');
+            modalScript.src = 'js/modal.js';
+            modalScript.onload = () => {
+                // Only load calendar.js after modal.js is loaded
+                const calendarScript = document.createElement('script');
+                calendarScript.src = 'js/calendar.js';
+                calendarScript.onload = () => {
+                    // Finally load auth.js
+                    const authScript = document.createElement('script');
+                    authScript.src = 'js/auth.js';
+                    document.body.appendChild(authScript);
+                };
+                document.body.appendChild(calendarScript);
+            };
+            document.body.appendChild(modalScript);
+        });
+    </script>
 
     <!-- Initialize application -->
     <script>
@@ -178,12 +196,21 @@ featured_image: /images/demo/home.jpg
             window.firebaseInitialized = true;
         }
 
-        // Start initialization when DOM is loaded
+        // Start initialization when all scripts are loaded
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM loaded, initializing...');
-            if (!window.authManager) {
-                window.authManager = new AuthManager();
-            }
+            console.log('DOM loaded, waiting for scripts...');
+            const checkDependencies = setInterval(() => {
+                if (window.TimeEntryModal && window.TimeTrackingCalendar) {
+                    console.log('All dependencies loaded, initializing...');
+                    if (!window.authManager) {
+                        window.authManager = new AuthManager();
+                    }
+                    clearInterval(checkDependencies);
+                }
+            }, 100);
+
+            // Clear check after 10 seconds to prevent infinite checking
+            setTimeout(() => clearInterval(checkDependencies), 10000);
         });
     </script>
 </body>
