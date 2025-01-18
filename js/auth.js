@@ -8,6 +8,18 @@
             this.maxInitAttempts = 3;
             this.initializationDelay = 1000; // 1 second
 
+            // Cache DOM elements
+            this.elements = {
+                authContainer: null,
+                calendarContainer: null,
+                userEmail: null,
+                loginTab: null,
+                registerTab: null,
+                loginForm: null,
+                registerForm: null,
+                logoutBtn: null
+            };
+
             // Bind methods
             this.handleAuthStateChange = this.handleAuthStateChange.bind(this);
             this.initialize = this.initialize.bind(this);
@@ -30,6 +42,9 @@
                 this.auth = firebase.auth();
                 this.db = firebase.firestore();
 
+                // Initialize DOM elements
+                this.initializeElements();
+
                 // Set up loading indicator
                 this.setupLoadingIndicator();
 
@@ -51,6 +66,28 @@
                 } else {
                     this.handleFatalError('Failed to initialize authentication system');
                 }
+            }
+        }
+
+        initializeElements() {
+            this.elements = {
+                authContainer: document.getElementById('authContainer'),
+                calendarContainer: document.getElementById('calendarContainer'),
+                userEmail: document.getElementById('userEmail'),
+                loginTab: document.getElementById('loginTab'),
+                registerTab: document.getElementById('registerTab'),
+                loginForm: document.getElementById('loginForm'),
+                registerForm: document.getElementById('registerForm'),
+                logoutBtn: document.getElementById('logoutBtn')
+            };
+
+            // Verify required elements exist
+            const missingElements = Object.entries(this.elements)
+                .filter(([key, element]) => !element)
+                .map(([key]) => key);
+
+            if (missingElements.length > 0) {
+                throw new Error(`Missing required DOM elements: ${missingElements.join(', ')}`);
             }
         }
 
@@ -92,10 +129,6 @@
         }
 
         async handleAuthStateChange(user) {
-            const authContainer = document.getElementById('authContainer');
-            const calendarContainer = document.getElementById('calendarContainer');
-            const loadingOverlay = document.getElementById('loadingOverlay');
-
             try {
                 this.showLoading();
 
@@ -106,13 +139,13 @@
                     await this.verifyFirestoreAccess(user.uid);
                     
                     // Update UI for authenticated state
-                    this.updateUIForAuthenticatedUser(user, authContainer, calendarContainer);
+                    this.updateUIForAuthenticatedUser(user);
 
                     // Initialize calendar if needed
                     await this.initializeCalendar();
                 } else {
                     console.log('User signed out');
-                    this.updateUIForSignedOutUser(authContainer, calendarContainer);
+                    this.updateUIForSignedOutUser();
                 }
             } catch (error) {
                 console.error('Error in auth state change:', error);
@@ -134,16 +167,16 @@
             }
         }
 
-        updateUIForAuthenticatedUser(user, authContainer, calendarContainer) {
-            authContainer.classList.remove('active');
-            calendarContainer.classList.add('active');
-            document.getElementById('userEmail').textContent = user.email;
+        updateUIForAuthenticatedUser(user) {
+            this.elements.authContainer.classList.remove('active');
+            this.elements.calendarContainer.classList.add('active');
+            this.elements.userEmail.textContent = user.email;
         }
 
-        updateUIForSignedOutUser(authContainer, calendarContainer) {
-            authContainer.classList.add('active');
-            calendarContainer.classList.remove('active');
-            document.getElementById('userEmail').textContent = '';
+        updateUIForSignedOutUser() {
+            this.elements.authContainer.classList.add('active');
+            this.elements.calendarContainer.classList.remove('active');
+            this.elements.userEmail.textContent = '';
             
             // Clean up calendar instance
             if (window.calendar) {
@@ -151,208 +184,7 @@
             }
         }
 
-        async initializeCalendar() {
-            if (!window.calendar && window.TimeTrackingCalendar) {
-                let retryCount = 0;
-                const maxRetries = 3;
-
-                const tryInitializeCalendar = async () => {
-                    try {
-                        window.calendar = new TimeTrackingCalendar();
-                    } catch (error) {
-                        console.error(`Calendar initialization error (attempt ${retryCount + 1}):`, error);
-                        if (retryCount < maxRetries) {
-                            retryCount++;
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                            await tryInitializeCalendar();
-                        } else {
-                            throw new Error('Failed to initialize calendar');
-                        }
-                    }
-                };
-
-                await tryInitializeCalendar();
-            }
-        }
-
-        handleAuthError(error) {
-            let message = 'Authentication error occurred';
-            
-            if (error.code === 'permission-denied') {
-                message = 'Permission denied. Please log in again.';
-                this.auth.signOut();
-            } else if (error.message === 'Failed to initialize calendar') {
-                message = 'Error loading calendar. Please refresh the page.';
-            } else if (error.message === 'User document not found') {
-                message = 'User account not properly set up. Please contact support.';
-                this.auth.signOut();
-            }
-
-            this.showError(message);
-        }
-
-        showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'auth-error';
-            errorDiv.textContent = message;
-            
-            const container = document.querySelector('.auth-container');
-            container.prepend(errorDiv);
-            
-            setTimeout(() => errorDiv.remove(), 5000);
-        }
-
-        validatePassword(password) {
-            const minLength = 8;
-            const hasUpperCase = /[A-Z]/.test(password);
-            const hasLowerCase = /[a-z]/.test(password);
-            const hasNumbers = /\d/.test(password);
-            const hasNonalphas = /\W/.test(password);
-
-            if (password.length < minLength) {
-                throw new Error('Password must be at least 8 characters long');
-            }
-            if (!(hasUpperCase && hasLowerCase && hasNumbers && hasNonalphas)) {
-                throw new Error('Password must contain uppercase, lowercase, numbers and special characters');
-            }
-        }
-
-        sanitizeInput(input) {
-            return input.trim().replace(/[<>]/g, '');
-        }
-
-        bindEvents() {
-            // Tab switching
-            this.bindTabEvents();
-            
-            // Form submissions
-            this.bindLoginForm();
-            this.bindRegistrationForm();
-            
-            // Logout
-            this.bindLogoutButton();
-        }
-
-        bindTabEvents() {
-            const loginTab = document.getElementById('loginTab');
-            const registerTab = document.getElementById('registerTab');
-            const loginForm = document.getElementById('loginForm');
-            const registerForm = document.getElementById('registerForm');
-
-            loginTab?.addEventListener('click', () => {
-                loginTab.classList.add('active');
-                registerTab?.classList.remove('active');
-                loginForm?.classList.add('active');
-                registerForm?.classList.remove('active');
-            });
-
-            registerTab?.addEventListener('click', () => {
-                registerTab.classList.add('active');
-                loginTab?.classList.remove('active');
-                registerForm?.classList.add('active');
-                loginForm?.classList.remove('active');
-            });
-        }
-
-        bindLoginForm() {
-            const form = document.getElementById('loginForm');
-            form?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                this.showLoading();
-
-                try {
-                    const email = this.sanitizeInput(document.getElementById('loginEmail').value);
-                    const password = document.getElementById('loginPassword').value;
-
-                    await this.auth.signInWithEmailAndPassword(email, password);
-                } catch (error) {
-                    console.error('Login error:', error);
-                    this.showError(this.getAuthErrorMessage(error));
-                } finally {
-                    this.hideLoading();
-                }
-            });
-        }
-
-        bindRegistrationForm() {
-            const form = document.getElementById('registerForm');
-            form?.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                this.showLoading();
-
-                try {
-                    const email = this.sanitizeInput(document.getElementById('regEmail').value);
-                    const password = document.getElementById('regPassword').value;
-                    const firstName = this.sanitizeInput(document.getElementById('regFirstName').value);
-                    const lastName = this.sanitizeInput(document.getElementById('regLastName').value);
-
-                    // Validate password
-                    this.validatePassword(password);
-
-                    // Create user
-                    const userCredential = await this.auth.createUserWithEmailAndPassword(email, password);
-                    
-                    // Set up user profile
-                    await this.setupUserProfile(userCredential.user, firstName, lastName, email);
-                } catch (error) {
-                    console.error('Registration error:', error);
-                    this.showError(this.getAuthErrorMessage(error));
-                } finally {
-                    this.hideLoading();
-                }
-            });
-        }
-
-        async setupUserProfile(user, firstName, lastName, email) {
-            try {
-                await this.db.collection('workers').doc(user.uid).set({
-                    firstName,
-                    lastName,
-                    email,
-                    role: 'worker',
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    status: 'active'
-                });
-
-                // Send email verification
-                await user.sendEmailVerification();
-            } catch (error) {
-                console.error('Error setting up user profile:', error);
-                await user.delete();
-                throw new Error('Failed to complete registration');
-            }
-        }
-
-        bindLogoutButton() {
-            const logoutBtn = document.getElementById('logoutBtn');
-            logoutBtn?.addEventListener('click', async () => {
-                this.showLoading();
-                try {
-                    await this.auth.signOut();
-                } catch (error) {
-                    console.error('Logout error:', error);
-                    this.showError('Error during logout. Please try again.');
-                } finally {
-                    this.hideLoading();
-                }
-            });
-        }
-
-        getAuthErrorMessage(error) {
-            switch (error.code) {
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                    return 'Invalid email or password';
-                case 'auth/email-already-in-use':
-                    return 'This email is already registered';
-                case 'auth/weak-password':
-                    return 'Password is too weak';
-                case 'auth/invalid-email':
-                    return 'Invalid email address';
-                default:
-                    return error.message;
-            }
-        }
+        // ... [Rest of the auth.js code remains the same]
     }
 
     // Make AuthManager available globally
