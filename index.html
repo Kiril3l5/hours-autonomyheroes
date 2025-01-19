@@ -172,22 +172,25 @@ featured_image: /images/demo/home.jpg
     </div>
 </div>
 
-  <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+<!-- Load Firebase first -->
+<script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
 <!-- Then load our scripts in correct order -->
-<script src="js/error-monitoring.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/auth.js"></script>
+<script defer src="js/error-monitoring.js"></script>
+<script defer src="js/utils.js"></script>
+<script defer src="js/modal.js"></script>
+<script defer src="js/calendar.js"></script>
+<script defer src="js/auth.js"></script>
 
-    <!-- Initialize app -->
+<!-- Initialize app last -->
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('load', async () => {
     try {
+        // Wait a moment for all scripts to initialize
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // Verify all dependencies are loaded
         const requiredDeps = [
             'TimeEntryModal',

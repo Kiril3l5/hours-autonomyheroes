@@ -39,7 +39,6 @@
                 throw new Error('Modal element not found');
             }
 
-            // Get form elements
             this.dateDisplay = document.getElementById('modalDate');
             this.timeOffCheck = document.getElementById('timeOffCheck');
             this.managerApprovedCheck = document.getElementById('managerApprovedCheck');
@@ -47,24 +46,15 @@
             this.overtimeApprovedCheck = document.getElementById('overtimeApprovedCheck');
             this.shortDayApprovedCheck = document.getElementById('shortDayApprovedCheck');
             
-            // Get sections
             this.timeOffSection = document.getElementById('timeOffApproval');
             this.hoursSection = document.getElementById('hoursSection');
             this.overtimeSection = document.getElementById('overtimeApproval');
             this.shortDaySection = document.getElementById('shortDayApproval');
             
-            // Get buttons
             this.saveButton = document.getElementById('saveEntry');
-
-            // Create loading overlay
+            
             this.createLoadingOverlay();
-			
-			const actions = document.querySelector('.modal .actions');
-    actions.innerHTML = `
-        <button id="saveEntry" class="btn">Save</button>
-    `;
-    this.saveButton = document.getElementById('saveEntry');
-}
+        }
 // Enable clicking outside to close
 setupOutsideClickHandling() {
     document.addEventListener('mousedown', (event) => {
@@ -402,7 +392,7 @@ handleTimeOffChange() {
         }
     }
 
-    // Make TimeEntryModal available globally
+// Make TimeEntryModal available globally
     window.TimeEntryModal = TimeEntryModal;
     console.log('TimeEntryModal loaded and registered');
 })();
