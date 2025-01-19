@@ -14,7 +14,7 @@ featured_image: /images/demo/home.jpg
     <meta name="theme-color" content="#ffffff">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    <!-- Security headers - Now correctly placed in head -->
+    <!-- Single CSP definition -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self';
         script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseapp.com https://cdnjs.cloudflare.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
@@ -176,67 +176,66 @@ featured_image: /images/demo/home.jpg
         </div>
     </div>
 
-<!-- Initialize Firebase first -->
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-<!-- App scripts with correct loading order -->
-<script src="js/error-monitoring.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/auth.js"></script>
+    <!-- App scripts with correct loading order -->
+    <script src="js/error-monitoring.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/modal.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/auth.js"></script>
 
-<!-- Initialize app -->
-<script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        try {
-            // Initialize Firebase
-            firebase.initializeApp({
-                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-                authDomain: "autonomy-heroes.firebaseapp.com",
-                projectId: "autonomy-heroes",
-                storageBucket: "autonomy-heroes.appspot.com",
-                messagingSenderId: "266526530869",
-                appId: "1:266526530869:web:ea95143735be497ca8007c"
+    <!-- Initialize app -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Initialize Firebase
+                firebase.initializeApp({
+                    apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+                    authDomain: "autonomy-heroes.firebaseapp.com",
+                    projectId: "autonomy-heroes",
+                    storageBucket: "autonomy-heroes.appspot.com",
+                    messagingSenderId: "266526530869",
+                    appId: "1:266526530869:web:ea95143735be497ca8007c"
+                });
+
+                // Wait for scripts to load
+                if (!window.DateUtils || !window.StringUtils || !window.DOMUtils) {
+                    throw new Error('Required utilities not loaded');
+                }
+
+                // Initialize auth manager
+                window.authManager = new AuthManager();
+                
+                // Hide loading indicator
+                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+            } catch (error) {
+                console.error('Error initializing application:', error);
+                const errorBoundary = document.getElementById('errorBoundary');
+                const errorMessage = document.getElementById('errorMessage');
+                if (errorBoundary && errorMessage) {
+                    errorMessage.textContent = 'Failed to initialize application. Please refresh the page.';
+                    errorBoundary.removeAttribute('aria-hidden');
+                }
+                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+            }
+        });
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.warn('ServiceWorker registration failed:', error);
+                    });
             });
-
-            // Wait for scripts to load
-            if (!window.DateUtils || !window.StringUtils || !window.DOMUtils) {
-                throw new Error('Required utilities not loaded');
-            }
-
-            // Initialize auth manager
-            window.authManager = new AuthManager();
-            
-            // Hide loading indicator
-            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-        } catch (error) {
-            console.error('Error initializing application:', error);
-            const errorBoundary = document.getElementById('errorBoundary');
-            const errorMessage = document.getElementById('errorMessage');
-            if (errorBoundary && errorMessage) {
-                errorMessage.textContent = 'Failed to initialize application. Please refresh the page.';
-                errorBoundary.removeAttribute('aria-hidden');
-            }
-            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
         }
-    });
-</script>
-
-// Register service worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
-                console.log('ServiceWorker registered:', registration.scope);
-            })
-            .catch(error => {
-                console.warn('ServiceWorker registration failed:', error);
-            });
-    });
-}
-</script>
+    </script>
 </body>
 </html>
