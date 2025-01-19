@@ -280,43 +280,30 @@ class TimeTrackingCalendar {
         }
 
         async submitWeek() {
+    try {
+        await this.verifyAuth();
+        
+        const weekData = await this.prepareWeekSubmission();
+        if (!weekData) {
+            return;
+        }
+
+        await this.saveWeekSubmission(weekData);
+        this.handleSuccessfulSubmission(weekData.weekNumber);
+
+        // Try to sync with server
         try {
-            await this.verifyAuth();
-            
-            const weekData = await this.prepareWeekSubmission();
-            if (!weekData) {
-                return;
-            }
+            const response = await fetch('/timeEntries', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(weekData)
+            });
 
-            // Try to submit online
-            try {
-                await this.saveWeekSubmission(weekData);
-                this.handleSuccessfulSubmission(weekData.weekNumber);
+            const result = await response.json();
 
-                // Try to sync with server
-                const response = await fetch('/timeEntries', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(weekData)
-                });
-
-                const result = await response.json();
-
-                // Handle offline storage
-                if (result.offline) {
-                    this.showOfflineNotification();
-                    // Request background sync
-                    if ('serviceWorker' in navigator && 'SyncManager' in window) {
-                        const registration = await navigator.serviceWorker.ready;
-                        await registration.sync.register('sync-timeentries');
-                    }
-                }
-            } catch (error) {
-                console.error('Error submitting week:', error);
-                
-                // Store offline if fetch fails
+            if (result.offline) {
                 this.showOfflineNotification();
                 if ('serviceWorker' in navigator && 'SyncManager' in window) {
                     const registration = await navigator.serviceWorker.ready;
@@ -324,11 +311,18 @@ class TimeTrackingCalendar {
                 }
             }
         } catch (error) {
-            console.error('Error in submitWeek:', error);
-            throw error;
+            console.error('Server sync error:', error);
+            this.showOfflineNotification();
+            if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.sync.register('sync-timeentries');
+            }
         }
+    } catch (error) {
+        console.error('Error in submitWeek:', error);
+        throw error;
     }
-        }
+}
 		
 	// Add offline notification
 showOfflineNotification() {
