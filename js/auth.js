@@ -429,15 +429,29 @@ class AuthManager {
     }
 
     async initializeCalendar() {
-        if (!window.TimeTrackingCalendar) {
-            throw new Error('Calendar component not loaded');
-        }
+        return new Promise((resolve, reject) => {
+            // Ensure modal element exists
+            const modalElement = document.getElementById('timeEntryModal');
+            if (!modalElement) {
+                reject(new Error('Modal element not found in DOM'));
+                return;
+            }
 
-        if (!this.calendarInstance) {
-            this.calendarInstance = new TimeTrackingCalendar();
-        }
+            // Ensure TimeTrackingCalendar exists
+            if (typeof TimeTrackingCalendar === 'undefined') {
+                reject(new Error('Calendar component not loaded'));
+                return;
+            }
 
-        return this.calendarInstance;
+            try {
+                if (!this.calendarInstance) {
+                    this.calendarInstance = new TimeTrackingCalendar();
+                }
+                resolve(this.calendarInstance);
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 }
 
