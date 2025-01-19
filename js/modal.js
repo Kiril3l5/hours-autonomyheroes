@@ -1,80 +1,80 @@
 // modal.js
 (function() {
     class TimeEntryModal {
-        constructor(onSave) {
-            this.initialize(onSave);
-            this.setupKeyboardHandling();
-            this.setupOutsideClickHandling();
+    constructor(onSave) {
+        this.initialize(onSave);
+        this.setupKeyboardHandling();
+        this.setupOutsideClickHandling();
+    }
+
+    initialize(onSave) {
+        // Initialize state
+        this.state = {
+            isOpen: false,
+            isLoading: false,
+            selectedDate: null,
+            currentEntry: null,
+            dirty: false
+        };
+
+        // Store callback
+        this.onSave = onSave;
+
+        // Get modal elements
+        this.initializeElements();
+
+        // Set up form validation
+        this.setupFormValidation();
+
+        // Bind methods
+        this.bindMethods();
+
+        // Bind event listeners
+        this.bindEventListeners();
+    }
+
+    initializeElements() {
+        this.modal = document.getElementById('timeEntryModal');
+        if (!this.modal) {
+            throw new Error('Modal element not found');
         }
 
-        initialize(onSave) {
-            // Initialize state
-            this.state = {
-                isOpen: false,
-                isLoading: false,
-                selectedDate: null,
-                currentEntry: null,
-                dirty: false
-            };
-
-            // Store callback
-            this.onSave = onSave;
-
-            // Get modal elements
-            this.initializeElements();
-
-            // Set up form validation
-            this.setupFormValidation();
-
-            // Bind methods
-            this.bindMethods();
-
-            // Bind event listeners
-            this.bindEventListeners();
-        }
-
-        initializeElements() {
-            this.modal = document.getElementById('timeEntryModal');
-            if (!this.modal) {
-                throw new Error('Modal element not found');
-            }
-
-            this.dateDisplay = document.getElementById('modalDate');
-            this.timeOffCheck = document.getElementById('timeOffCheck');
-            this.managerApprovedCheck = document.getElementById('managerApprovedCheck');
-            this.hoursInput = document.getElementById('hoursInput');
-            this.overtimeApprovedCheck = document.getElementById('overtimeApprovedCheck');
-            this.shortDayApprovedCheck = document.getElementById('shortDayApprovedCheck');
-            
-            this.timeOffSection = document.getElementById('timeOffApproval');
-            this.hoursSection = document.getElementById('hoursSection');
-            this.overtimeSection = document.getElementById('overtimeApproval');
-            this.shortDaySection = document.getElementById('shortDayApproval');
-            
-            this.saveButton = document.getElementById('saveEntry');
-            
-            this.createLoadingOverlay();
-        }
-// Enable clicking outside to close
-setupOutsideClickHandling() {
-    document.addEventListener('mousedown', (event) => {
-        if (!this.state.isOpen) return;
+        this.dateDisplay = document.getElementById('modalDate');
+        this.timeOffCheck = document.getElementById('timeOffCheck');
+        this.managerApprovedCheck = document.getElementById('managerApprovedCheck');
+        this.hoursInput = document.getElementById('hoursInput');
+        this.overtimeApprovedCheck = document.getElementById('overtimeApprovedCheck');
+        this.shortDayApprovedCheck = document.getElementById('shortDayApprovedCheck');
         
-        // Check if click is outside modal content
-        if (!event.target.closest('.modal-content')) {
-            this.close();
-        }
-    });
-}
-        }
+        this.timeOffSection = document.getElementById('timeOffApproval');
+        this.hoursSection = document.getElementById('hoursSection');
+        this.overtimeSection = document.getElementById('overtimeApproval');
+        this.shortDaySection = document.getElementById('shortDayApproval');
+        
+        this.saveButton = document.getElementById('saveEntry');
+        
+        this.createLoadingOverlay();
+    }
 
-        createLoadingOverlay() {
-            this.loadingOverlay = document.createElement('div');
-            this.loadingOverlay.className = 'modal-loading-overlay';
-            this.loadingOverlay.innerHTML = '<div class="spinner"></div>';
-            this.loadingOverlay.style.display = 'none';
-            this.modal.appendChild(this.loadingOverlay);
-        }
+    // Enable clicking outside to close
+    setupOutsideClickHandling() {
+        document.addEventListener('mousedown', (event) => {
+            if (!this.state.isOpen) return;
+            
+            // Check if click is outside modal content
+            if (!event.target.closest('.modal-content')) {
+                this.close();
+            }
+        });
+    }
+
+    createLoadingOverlay() {
+        this.loadingOverlay = document.createElement('div');
+        this.loadingOverlay.className = 'modal-loading-overlay';
+        this.loadingOverlay.innerHTML = '<div class="spinner"></div>';
+        this.loadingOverlay.style.display = 'none';
+        this.modal.appendChild(this.loadingOverlay);
+    }
 
         bindMethods() {
             this.handleSave = this.handleSave.bind(this);
@@ -393,6 +393,5 @@ handleTimeOffChange() {
     }
 
 // Make TimeEntryModal available globally
-    window.TimeEntryModal = TimeEntryModal;
-    console.log('TimeEntryModal loaded and registered');
-})();
+window.TimeEntryModal = TimeEntryModal;
+console.log('TimeEntryModal loaded and registered');

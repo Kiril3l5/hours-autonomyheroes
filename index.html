@@ -13,9 +13,7 @@ featured_image: /images/demo/home.jpg
     <meta name="description" content="Hours Portal - Time tracking and management system">
     <meta name="theme-color" content="#ffffff">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    
-    <!-- Single CSP definition -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://www.gstatic.com https://*.firebaseapp.com; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com wss://*.firebaseio.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://cdnjs.cloudflare.com;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     
@@ -186,46 +184,39 @@ featured_image: /images/demo/home.jpg
 
 <!-- Initialize app last -->
 <script>
-window.addEventListener('load', async () => {
-    try {
-        // Wait a moment for all scripts to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
+window.addEventListener('DOMContentLoaded', () => {
+    // Wait for all scripts to load
+    Promise.all([
+        new Promise(resolve => {
+            if (window.TimeEntryModal) resolve();
+            else window.addEventListener('load', resolve);
+        }),
+        new Promise(resolve => {
+            if (window.TimeTrackingCalendar) resolve();
+            else window.addEventListener('load', resolve);
+        })
+    ]).then(() => {
+        try {
+            // Initialize Firebase
+            firebase.initializeApp({
+                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+                authDomain: "autonomy-heroes.firebaseapp.com",
+                projectId: "autonomy-heroes",
+                storageBucket: "autonomy-heroes.appspot.com",
+                messagingSenderId: "266526530869",
+                appId: "1:266526530869:web:ea95143735be497ca8007c"
+            });
 
-        // Verify all dependencies are loaded
-        const requiredDeps = [
-            'TimeEntryModal',
-            'TimeTrackingCalendar',
-            'AuthManager',
-            'DateUtils',
-            'StringUtils',
-            'DOMUtils'
-        ];
-        
-        const missing = requiredDeps.filter(dep => !window[dep]);
-        if (missing.length > 0) {
-            throw new Error(`Missing dependencies: ${missing.join(', ')}`);
+            // Initialize auth manager
+            window.authManager = new AuthManager();
+        } catch (error) {
+            console.error('Error initializing application:', error);
+            document.getElementById('errorMessage').textContent = error.message;
+            document.getElementById('errorBoundary').removeAttribute('aria-hidden');
+        } finally {
+            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
         }
-
-        // Initialize Firebase
-        firebase.initializeApp({
-            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-            authDomain: "autonomy-heroes.firebaseapp.com",
-            projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.appspot.com",
-            messagingSenderId: "266526530869",
-            appId: "1:266526530869:web:ea95143735be497ca8007c"
-        });
-
-        // Initialize auth manager
-        window.authManager = new AuthManager();
-    } catch (error) {
-        console.error('Error initializing application:', error);
-        document.getElementById('errorMessage').textContent = error.message;
-        document.getElementById('errorBoundary').removeAttribute('aria-hidden');
-    } finally {
-        document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-    }
-});
-</script>
+    });
+});</script>
 </body>
 </html>
