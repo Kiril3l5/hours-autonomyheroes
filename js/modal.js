@@ -55,10 +55,27 @@
             
             // Get buttons
             this.saveButton = document.getElementById('saveEntry');
-            this.cancelButton = document.getElementById('cancelEntry');
 
             // Create loading overlay
             this.createLoadingOverlay();
+			
+			const actions = document.querySelector('.modal .actions');
+    actions.innerHTML = `
+        <button id="saveEntry" class="btn">Save</button>
+    `;
+    this.saveButton = document.getElementById('saveEntry');
+}
+// Enable clicking outside to close
+setupOutsideClickHandling() {
+    document.addEventListener('mousedown', (event) => {
+        if (!this.state.isOpen) return;
+        
+        // Check if click is outside modal content
+        if (!event.target.closest('.modal-content')) {
+            this.close();
+        }
+    });
+}
         }
 
         createLoadingOverlay() {
@@ -233,13 +250,38 @@
         }
 
         updateSectionVisibility() {
-            const hours = Number(this.hoursInput.value);
-            
-            if (!this.timeOffCheck.checked) {
-                this.overtimeSection.style.display = hours > 8 ? 'block' : 'none';
-                this.shortDaySection.style.display = hours < 8 ? 'block' : 'none';
-            }
-        }
+    const isTimeOff = this.timeOffCheck.checked;
+    const hours = Number(this.hoursInput.value);
+    
+    // Time off section
+    this.timeOffSection.style.display = isTimeOff ? 'block' : 'none';
+    
+    // Hours section - always visible when not time off
+    this.hoursSection.style.display = isTimeOff ? 'none' : 'block';
+    
+    // Only show approval sections when relevant
+    if (!isTimeOff) {
+        this.overtimeSection.style.display = hours > 8 ? 'block' : 'none';
+        this.shortDaySection.style.display = hours < 8 ? 'block' : 'none';
+    } else {
+        this.overtimeSection.style.display = 'none';
+        this.shortDaySection.style.display = 'none';
+    }
+}
+
+handleTimeOffChange() {
+    const isTimeOff = this.timeOffCheck.checked;
+    
+    // Update visibility
+    this.updateSectionVisibility();
+    
+    // Reset hours when switching to time off
+    if (isTimeOff) {
+        this.hoursInput.value = '0';
+    } else {
+        this.hoursInput.value = '8';
+    }
+}
 
         async handleSave() {
             if (!this.validate()) {
