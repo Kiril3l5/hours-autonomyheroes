@@ -23,31 +23,22 @@ class TimeTrackingCalendar {
     }
 
         verifyEnvironment() {
-            // Check user authentication
-            const currentUser = firebase.auth()?.currentUser;
-            if (!currentUser) {
-                throw new Error('User must be logged in to initialize calendar');
-            }
+    // Check user authentication
+    const currentUser = firebase.auth()?.currentUser;
+    if (!currentUser) {
+        throw new Error('User must be logged in to initialize calendar');
+    }
 
-            // Verify required dependencies
-            if (!window.TimeEntryModal) {
-                throw new Error('TimeEntryModal dependency not found');
-            }
+    // Verify required dependencies
+    if (typeof window.TimeEntryModal === 'undefined') {
+        console.error('TimeEntryModal not found on window object');
+        throw new Error('TimeEntryModal dependency not found');
+    }
 
-            // Store references
-            this.userId = currentUser.uid;
-            this.db = firebase.firestore();
-            
-            // Set up offline persistence
-            this.db.enablePersistence({ synchronizeTabs: true })
-                .catch(error => {
-                    if (error.code === 'failed-precondition') {
-                        console.warn('Multiple tabs open, offline persistence disabled');
-                    } else if (error.code === 'unimplemented') {
-                        console.warn('Browser doesn\'t support offline persistence');
-                    }
-                });
-        }
+    // Store references
+    this.userId = currentUser.uid;
+    this.db = firebase.firestore();
+}
 
         initializeState() {
             // Initialize with UTC date
