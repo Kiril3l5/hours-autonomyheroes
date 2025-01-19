@@ -1,4 +1,4 @@
-/* auth.js */
+// auth.js
 class AuthManager {
     constructor() {
         try {
@@ -15,6 +15,7 @@ class AuthManager {
 
     verifyRequiredElements() {
         const required = [
+            'app',
             'authContainer',
             'calendarContainer',
             'userEmail',
@@ -25,7 +26,8 @@ class AuthManager {
             'loginFormElement',
             'registerFormElement',
             'authErrorContainer',
-            'authErrorMessage'
+            'authErrorMessage',
+            'timeEntryModal' // Add modal element check
         ];
 
         const missing = required.filter(id => !document.getElementById(id));
@@ -35,17 +37,22 @@ class AuthManager {
     }
 
     initializeState() {
+        // Basic state
         this.isInitialized = false;
         this.auth = null;
         this.db = null;
         this.calendarInstance = null;
-        
-        // Get UI elements
+
+        // Cache DOM elements
+        this.app = document.getElementById('app');
+        this.authContainer = document.getElementById('authContainer');
+        this.calendarContainer = document.getElementById('calendarContainer');
         this.errorContainer = document.getElementById('authErrorContainer');
         this.errorMessage = document.getElementById('authErrorMessage');
         this.loginForm = document.getElementById('loginFormElement');
         this.registerForm = document.getElementById('registerFormElement');
-        
+        this.userEmail = document.getElementById('userEmail');
+
         // Email validation regex
         this.emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     }
@@ -55,9 +62,12 @@ class AuthManager {
             this.auth = firebase.auth();
             this.db = firebase.firestore();
             
-            this.auth.onAuthStateChanged((user) => this.handleAuthStateChange(user));
-            
+            // Set persistence first
             this.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+                .then(() => {
+                    // Only set up auth state observer after persistence is set
+                    this.auth.onAuthStateChanged((user) => this.handleAuthStateChange(user));
+                })
                 .catch(error => {
                     console.error('Error setting persistence:', error);
                     this.showError('Failed to initialize persistence');
@@ -72,22 +82,15 @@ class AuthManager {
 
     bindEvents() {
         // Tab switching
-        document.getElementById('loginTab').addEventListener('click', () => {
-            this.switchTab('login');
-        });
-
-        document.getElementById('registerTab').addEventListener('click', () => {
-            this.switchTab('register');
-        });
+        document.getElementById('loginTab').addEventListener('click', () => this.switchTab('login'));
+        document.getElementById('registerTab').addEventListener('click', () => this.switchTab('register'));
 
         // Form submissions
         this.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         this.registerForm.addEventListener('submit', (e) => this.handleRegister(e));
 
-        // Close error message
-        document.querySelector('.auth-error-close')?.addEventListener('click', () => {
-            this.clearError();
-        });
+        // Error message close
+        document.querySelector('.auth-error-close')?.addEventListener('click', () => this.clearError());
 
         // Logout
         document.getElementById('logoutBtn')?.addEventListener('click', () => this.handleLogout());
@@ -107,11 +110,15 @@ class AuthManager {
             registerTab.classList.remove('active');
             loginForm.classList.add('active');
             registerForm.classList.remove('active');
+            loginTab.setAttribute('aria-selected', 'true');
+            registerTab.setAttribute('aria-selected', 'false');
         } else {
             registerTab.classList.add('active');
             loginTab.classList.remove('active');
             registerForm.classList.add('active');
             loginForm.classList.remove('active');
+            registerTab.setAttribute('aria-selected', 'true');
+            loginTab.setAttribute('aria-selected', 'false');
         }
 
         this.clearError();
@@ -119,7 +126,7 @@ class AuthManager {
     }
 
     setupInputValidation() {
-        // Login form validation
+        // Login validation
         const loginEmail = document.getElementById('loginEmail');
         const loginPassword = document.getElementById('loginPassword');
 
@@ -131,7 +138,7 @@ class AuthManager {
             this.validatePassword(loginPassword, 'loginPasswordError');
         });
 
-        // Register form validation
+        // Register validation
         const regEmail = document.getElementById('regEmail');
         const regPassword = document.getElementById('regPassword');
         const regFirstName = document.getElementById('regFirstName');
@@ -154,46 +161,54 @@ class AuthManager {
         });
     }
 
-    validateEmail(input, errorId) {
-        const errorElement = document.getElementById(errorId);
-        if (!input.value) {
-            errorElement.textContent = 'Email is required';
-            return false;
+    async handleAuthStateChange(user) {
+        try {
+            if (user) {
+                console.log('User signed in:', user.uid);
+                await this.handleSignedInState(user);
+            } else {
+                console.log('User signed out');
+                this.handleSignedOutState();
+            }
+        } catch (error) {
+            console.error('Error in auth state change:', error);
+            this.showError('Error updating application state');
         }
-        if (!this.emailRegex.test(input.value)) {
-            errorElement.textContent = 'Please enter a valid email address';
-            return false;
-        }
-        errorElement.textContent = '';
-        return true;
     }
 
-    validatePassword(input, errorId) {
-        const errorElement = document.getElementById(errorId);
-        if (!input.value) {
-            errorElement.textContent = 'Password is required';
-            return false;
+    async handleSignedInState(user) {
+        try {
+            // Update UI first
+            this.authContainer.classList.remove('active');
+            this.calendarContainer.classList.add('active');
+            this.userEmail.textContent = user.email;
+
+            // Initialize calendar if needed
+            if (!this.calendarInstance) {
+                await this.initializeCalendarWithTimeout();
+            }
+        } catch (error) {
+            console.error('Error handling signed in state:', error);
+            this.showError('Error initializing calendar. Please try again.');
+            
+            // Reset UI on error
+            this.authContainer.classList.add('active');
+            this.calendarContainer.classList.remove('active');
+            throw error;
         }
-        if (input.value.length < 6) {
-            errorElement.textContent = 'Password must be at least 6 characters';
-            return false;
-        }
-        errorElement.textContent = '';
-        return true;
     }
 
-    validateName(input, errorId) {
-        const errorElement = document.getElementById(errorId);
-        if (!input.value) {
-            errorElement.textContent = 'This field is required';
-            return false;
+    handleSignedOutState() {
+        // Update UI
+        this.authContainer.classList.add('active');
+        this.calendarContainer.classList.remove('active');
+        this.userEmail.textContent = '';
+        
+        // Clean up calendar
+        if (this.calendarInstance) {
+            // Add cleanup if needed
+            this.calendarInstance = null;
         }
-        if (input.value.length < 2) {
-            errorElement.textContent = 'Must be at least 2 characters';
-            return false;
-        }
-        errorElement.textContent = '';
-        return true;
     }
 
     async handleLogin(e) {
@@ -239,24 +254,14 @@ class AuthManager {
         const lastName = document.getElementById('regLastName').value.trim();
         
         // Validate all inputs
-        const isEmailValid = this.validateEmail(
-            document.getElementById('regEmail'), 
-            'regEmailError'
-        );
-        const isPasswordValid = this.validatePassword(
-            document.getElementById('regPassword'), 
-            'regPasswordError'
-        );
-        const isFirstNameValid = this.validateName(
-            document.getElementById('regFirstName'), 
-            'regFirstNameError'
-        );
-        const isLastNameValid = this.validateName(
-            document.getElementById('regLastName'), 
-            'regLastNameError'
-        );
+        const validations = [
+            this.validateEmail(document.getElementById('regEmail'), 'regEmailError'),
+            this.validatePassword(document.getElementById('regPassword'), 'regPasswordError'),
+            this.validateName(document.getElementById('regFirstName'), 'regFirstNameError'),
+            this.validateName(document.getElementById('regLastName'), 'regLastNameError')
+        ];
         
-        if (!isEmailValid || !isPasswordValid || !isFirstNameValid || !isLastNameValid) {
+        if (validations.includes(false)) {
             return;
         }
 
@@ -295,55 +300,92 @@ class AuthManager {
         }
     }
 
-    async handleAuthStateChange(user) {
-        const authContainer = document.getElementById('authContainer');
-        const calendarContainer = document.getElementById('calendarContainer');
+    async initializeCalendarWithTimeout(retryCount = 0) {
+        const maxRetries = 3;
+        const retryDelay = 1000; // 1 second
+        const timeout = 5000; // 5 seconds
 
-        if (!authContainer || !calendarContainer) {
-            console.error('Required DOM elements not found');
-            return;
-        }
+        try {
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Calendar initialization timed out')), timeout);
+            });
 
-        if (user) {
-            console.log('User signed in:', user.uid);
+            const initPromise = this.initializeCalendar();
+            await Promise.race([initPromise, timeoutPromise]);
+        } catch (error) {
+            console.error(`Calendar initialization error (attempt ${retryCount + 1}):`, error);
             
-            try {
-                // Update UI
-                authContainer.classList.remove('active');
-                calendarContainer.classList.add('active');
-                
-                const userEmailElement = document.getElementById('userEmail');
-                if (userEmailElement) {
-                    userEmailElement.textContent = user.email;
-                }
-
-                // Initialize calendar
-                if (!this.calendarInstance) {
-                    await this.initializeCalendarWithTimeout();
-                }
-            } catch (error) {
-                console.error('Error after login:', error);
-                this.showError('Error initializing calendar. Please try again.');
-                
-                // Reset UI state on error
-                authContainer.classList.add('active');
-                calendarContainer.classList.remove('active');
+            if (retryCount < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                return this.initializeCalendarWithTimeout(retryCount + 1);
             }
-        } else {
-            // User is signed out
-            authContainer.classList.add('active');
-            calendarContainer.classList.remove('active');
-            
-            const userEmailElement = document.getElementById('userEmail');
-            if (userEmailElement) {
-                userEmailElement.textContent = '';
-            }
-            
-            // Clean up calendar instance
-            this.calendarInstance = null;
+            throw new Error('Failed to initialize calendar after multiple attempts');
         }
     }
 
+    async initializeCalendar() {
+        return new Promise((resolve, reject) => {
+            try {
+                // Verify dependencies
+                if (!window.TimeTrackingCalendar) {
+                    throw new Error('Calendar component not loaded');
+                }
+
+                if (!this.calendarInstance) {
+                    this.calendarInstance = new TimeTrackingCalendar();
+                }
+
+                resolve(this.calendarInstance);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    // Validation methods
+    validateEmail(input, errorId) {
+        const errorElement = document.getElementById(errorId);
+        if (!input.value) {
+            errorElement.textContent = 'Email is required';
+            return false;
+        }
+        if (!this.emailRegex.test(input.value)) {
+            errorElement.textContent = 'Please enter a valid email address';
+            return false;
+        }
+        errorElement.textContent = '';
+        return true;
+    }
+
+    validatePassword(input, errorId) {
+        const errorElement = document.getElementById(errorId);
+        if (!input.value) {
+            errorElement.textContent = 'Password is required';
+            return false;
+        }
+        if (input.value.length < 6) {
+            errorElement.textContent = 'Password must be at least 6 characters';
+            return false;
+        }
+        errorElement.textContent = '';
+        return true;
+    }
+
+    validateName(input, errorId) {
+        const errorElement = document.getElementById(errorId);
+        if (!input.value) {
+            errorElement.textContent = 'This field is required';
+            return false;
+        }
+        if (input.value.length < 2) {
+            errorElement.textContent = 'Must be at least 2 characters';
+            return false;
+        }
+        errorElement.textContent = '';
+        return true;
+    }
+
+    // UI helper methods
     setLoading(isLoading, form) {
         const button = document.querySelector(`#${form}FormElement .btn-auth`);
         const spinner = button.querySelector('.btn-spinner');
@@ -403,55 +445,6 @@ class AuthManager {
             default:
                 return error.message || 'An error occurred during authentication';
         }
-    }
-
-    async initializeCalendarWithTimeout(retryCount = 0) {
-        const maxRetries = 3;
-        const retryDelay = 1000; // 1 second
-        const timeout = 5000; // 5 seconds
-
-        try {
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Calendar initialization timed out')), timeout);
-            });
-
-            const initPromise = this.initializeCalendar();
-            await Promise.race([initPromise, timeoutPromise]);
-        } catch (error) {
-            console.error(`Calendar initialization error (attempt ${retryCount + 1}):`, error);
-            
-            if (retryCount < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-                return this.initializeCalendarWithTimeout(retryCount + 1);
-            }
-            throw new Error('Failed to initialize calendar after multiple attempts');
-        }
-    }
-
-    async initializeCalendar() {
-        return new Promise((resolve, reject) => {
-            // Ensure modal element exists
-            const modalElement = document.getElementById('timeEntryModal');
-            if (!modalElement) {
-                reject(new Error('Modal element not found in DOM'));
-                return;
-            }
-
-            // Ensure TimeTrackingCalendar exists
-            if (typeof TimeTrackingCalendar === 'undefined') {
-                reject(new Error('Calendar component not loaded'));
-                return;
-            }
-
-            try {
-                if (!this.calendarInstance) {
-                    this.calendarInstance = new TimeTrackingCalendar();
-                }
-                resolve(this.calendarInstance);
-            } catch (error) {
-                reject(error);
-            }
-        });
     }
 }
 

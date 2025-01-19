@@ -5,7 +5,6 @@ description: Input hours
 featured_image: /images/demo/home.jpg
 ---
 
-/* index.html */
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +13,7 @@ featured_image: /images/demo/home.jpg
     <meta name="description" content="Hours Portal - Time tracking and management system">
     <meta name="theme-color" content="#ffffff">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!-- Removed CSP meta tag - using headers file instead -->
+    <!-- CSP header is in _headers file -->
     
     <title>Hours Portal - Autonomy Heroes</title>
     
@@ -32,211 +31,224 @@ featured_image: /images/demo/home.jpg
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <!-- Initial loading indicator -->
-    <div id="appLoading" class="app-loading">
-        <div class="spinner" role="status">
-            <span class="sr-only">Loading application...</span>
-        </div>
-    </div>
-
-    <!-- Error boundary -->
-    <div id="errorBoundary" class="error-boundary" aria-hidden="true">
-        <div class="error-content">
-            <h2>Something went wrong</h2>
-            <p id="errorMessage"></p>
-            <button class="btn-primary" onclick="window.location.reload()">Reload Application</button>
-        </div>
-    </div>
-
-    <!-- Auth error container -->
-    <div id="authErrorContainer" class="auth-error-container" aria-hidden="true">
-        <div class="auth-error-content">
-            <p id="authErrorMessage"></p>
-            <button class="auth-error-close" aria-label="Close error message">&times;</button>
-        </div>
-    </div>
-
-    <!-- Auth Container -->
-    <div id="authContainer" class="auth-container active">
-        <h1 class="title">Hours Portal</h1>
-        
-        <div class="auth-tabs" role="tablist">
-            <button id="loginTab" class="auth-tab active" role="tab" aria-selected="true">Login</button>
-            <button id="registerTab" class="auth-tab" role="tab" aria-selected="false">Register</button>
+    <!-- App container -->
+    <div id="app">
+        <!-- Initial loading indicator -->
+        <div id="appLoading" class="app-loading">
+            <div class="spinner" role="status">
+                <span class="sr-only">Loading application...</span>
+            </div>
         </div>
 
-        <div id="loginForm" class="auth-form active">
-            <form id="loginFormElement" novalidate>
-                <div class="form-group">
-                    <label for="loginEmail">Work Email</label>
-                    <input type="email" id="loginEmail" required 
-                           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
-                    <div class="form-error" id="loginEmailError"></div>
+        <!-- Error boundary -->
+        <div id="errorBoundary" class="error-boundary" aria-hidden="true">
+            <div class="error-content">
+                <h2>Something went wrong</h2>
+                <p id="errorMessage"></p>
+                <button class="btn-primary" onclick="window.location.reload()">Reload Application</button>
+            </div>
+        </div>
+
+        <!-- Auth error container -->
+        <div id="authErrorContainer" class="auth-error-container" aria-hidden="true">
+            <div class="auth-error-content">
+                <p id="authErrorMessage"></p>
+                <button class="auth-error-close" aria-label="Close error message">&times;</button>
+            </div>
+        </div>
+
+        <!-- Auth Container -->
+        <div id="authContainer" class="auth-container active">
+            <h1 class="title">Hours Portal</h1>
+            
+            <div class="auth-tabs" role="tablist">
+                <button id="loginTab" class="auth-tab active" role="tab" aria-selected="true">Login</button>
+                <button id="registerTab" class="auth-tab" role="tab" aria-selected="false">Register</button>
+            </div>
+
+            <div id="loginForm" class="auth-form active">
+                <form id="loginFormElement" novalidate>
+                    <div class="form-group">
+                        <label for="loginEmail">Work Email</label>
+                        <input type="email" id="loginEmail" required 
+                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+                        <div class="form-error" id="loginEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required minlength="6">
+                        <div class="form-error" id="loginPasswordError"></div>
+                    </div>
+                    <button type="submit" class="btn-auth">
+                        <span class="btn-text">Login</span>
+                        <span class="btn-spinner hidden"></span>
+                    </button>
+                </form>
+            </div>
+
+            <div id="registerForm" class="auth-form">
+                <form id="registerFormElement" novalidate>
+                    <div class="form-group">
+                        <label for="regFirstName">First Name</label>
+                        <input type="text" id="regFirstName" required minlength="2">
+                        <div class="form-error" id="regFirstNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regLastName">Last Name</label>
+                        <input type="text" id="regLastName" required minlength="2">
+                        <div class="form-error" id="regLastNameError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Work Email</label>
+                        <input type="email" id="regEmail" required 
+                               pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
+                        <div class="form-error" id="regEmailError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" required minlength="6">
+                        <div class="form-error" id="regPasswordError"></div>
+                    </div>
+                    <button type="submit" class="btn-auth">
+                        <span class="btn-text">Register</span>
+                        <span class="btn-spinner hidden"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Calendar Container - Separate from Auth Container -->
+        <div id="calendarContainer" class="calendar-container">
+            <div class="user-info">
+                Logged in as <span id="userEmail"></span>
+                <button id="logoutBtn" class="btn-logout">Logout</button>
+            </div>
+            
+            <div class="container">
+                <div class="calendar-card">
+                    <h1 class="title">Hours Portal</h1>
+                    
+                    <div class="month-nav">
+                        <button class="nav-btn" id="prevMonth" aria-label="Previous month">←</button>
+                        <span class="month-title" id="currentMonth"></span>
+                        <button class="nav-btn" id="nextMonth" aria-label="Next month">→</button>
+                    </div>
+
+                    <div class="calendar-grid" id="calendar">
+                        <div class="weekday">Mon</div>
+                        <div class="weekday">Tue</div>
+                        <div class="weekday">Wed</div>
+                        <div class="weekday">Thu</div>
+                        <div class="weekday">Fri</div>
+                        <div class="weekday">Sat</div>
+                        <div class="weekday">Sun</div>
+                    </div>
+
+                    <div class="submit-section">
+                        <h2>Current Week Summary</h2>
+                        <div id="weekSummary"></div>
+                        <button id="submitWeek" class="btn">Submit Week for Approval</button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" required minlength="6">
-                    <div class="form-error" id="loginPasswordError"></div>
-                </div>
-                <button type="submit" class="btn-auth">
-                    <span class="btn-text">Login</span>
-                    <span class="btn-spinner hidden"></span>
-                </button>
-            </form>
+            </div>
         </div>
-		
-		<!-- Calendar Container -->
-    <div id="calendarContainer" class="calendar-container">
-        <div class="user-info">
-            Logged in as <span id="userEmail"></span>
-            <button id="logoutBtn" class="btn-logout">Logout</button>
-        </div>
-        
-        <div class="container">
-            <div class="calendar-card">
-                <h1 class="title">Hours Portal</h1>
+
+        <!-- Time Entry Modal -->
+        <div id="timeEntryModal" class="modal" role="dialog" aria-labelledby="modalDate" aria-hidden="true">
+            <div class="modal-content">
+                <h2 id="modalDate"></h2>
                 
-                <div class="month-nav">
-                    <button class="nav-btn" id="prevMonth" aria-label="Previous month">←</button>
-                    <span class="month-title" id="currentMonth"></span>
-                    <button class="nav-btn" id="nextMonth" aria-label="Next month">→</button>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="timeOffCheck">
+                        Time off request
+                    </label>
+                    <div id="timeOffApproval" class="checkbox-group" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="managerApprovedCheck">
+                            Time off was approved by manager
+                        </label>
+                    </div>
                 </div>
 
-                <div class="calendar-grid" id="calendar">
-                    <div class="weekday">Mon</div>
-                    <div class="weekday">Tue</div>
-                    <div class="weekday">Wed</div>
-                    <div class="weekday">Thu</div>
-                    <div class="weekday">Fri</div>
-                    <div class="weekday">Sat</div>
-                    <div class="weekday">Sun</div>
+                <div id="hoursSection" class="form-group">
+                    <label for="hoursInput">Hours Worked</label>
+                    <input type="number" id="hoursInput" min="0" max="24" step="0.5" value="8">
+                    
+                    <div id="overtimeApproval" class="checkbox-group" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="overtimeApprovedCheck">
+                            Overtime was approved by manager
+                        </label>
+                    </div>
+                    
+                    <div id="shortDayApproval" class="checkbox-group" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="shortDayApprovedCheck">
+                            Less than 8h was approved by manager
+                        </label>
+                    </div>
                 </div>
 
-                <div class="submit-section">
-                    <h2>Current Week Summary</h2>
-                    <div id="weekSummary"></div>
-                    <button id="submitWeek" class="btn">Submit Week for Approval</button>
+                <div class="actions">
+                    <button id="saveEntry" class="btn">Save</button>
                 </div>
             </div>
         </div>
     </div>
 
-        <div id="registerForm" class="auth-form">
-            <form id="registerFormElement" novalidate>
-                <div class="form-group">
-                    <label for="regFirstName">First Name</label>
-                    <input type="text" id="regFirstName" required minlength="2">
-                    <div class="form-error" id="regFirstNameError"></div>
-                </div>
-                <div class="form-group">
-                    <label for="regLastName">Last Name</label>
-                    <input type="text" id="regLastName" required minlength="2">
-                    <div class="form-error" id="regLastNameError"></div>
-                </div>
-                <div class="form-group">
-                    <label for="regEmail">Work Email</label>
-                    <input type="email" id="regEmail" required 
-                           pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$">
-                    <div class="form-error" id="regEmailError"></div>
-                </div>
-                <div class="form-group">
-                    <label for="regPassword">Password</label>
-                    <input type="password" id="regPassword" required minlength="6">
-                    <div class="form-error" id="regPasswordError"></div>
-                </div>
-                <button type="submit" class="btn-auth">
-                    <span class="btn-text">Register</span>
-                    <span class="btn-spinner hidden"></span>
-                </button>
-            </form>
-        </div>
-    </div>
+    <!-- Load dependencies first -->
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-    <!-- Rest of the content remains the same -->
-    
-    <!-- Load dependencies -->
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+    <!-- Load utilities next -->
+    <script src="js/utils.js"></script>
+    <script src="js/error-monitoring.js"></script>
 
-<!-- Load application scripts -->
-<script src="js/error-monitoring.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/modal.js"></script>
-<script src="js/calendar.js"></script>
-<script src="js/auth.js"></script>
+    <!-- Load app components -->
+    <script src="js/modal.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/auth.js"></script>
 
-<!-- Initialize application -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    try {
-        // Initialize Firebase
-        firebase.initializeApp({
-            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-            authDomain: "autonomy-heroes.firebaseapp.com",
-            projectId: "autonomy-heroes",
-            storageBucket: "autonomy-heroes.appspot.com",
-            messagingSenderId: "266526530869",
-            appId: "1:266526530869:web:ea95143735be497ca8007c"
+    <!-- Initialize application -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Firebase
+                firebase.initializeApp({
+                    apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+                    authDomain: "autonomy-heroes.firebaseapp.com",
+                    projectId: "autonomy-heroes",
+                    storageBucket: "autonomy-heroes.appspot.com",
+                    messagingSenderId: "266526530869",
+                    appId: "1:266526530869:web:ea95143735be497ca8007c"
+                });
+
+                // Initialize service worker
+                if ('serviceWorker' in navigator) {
+                    try {
+                        await navigator.serviceWorker.register('/sw.js');
+                        console.log('Service Worker registered');
+                    } catch (error) {
+                        console.error('Service Worker registration failed:', error);
+                    }
+                }
+
+                // Initialize auth manager
+                window.authManager = new AuthManager();
+                
+            } catch (error) {
+                console.error('Error initializing application:', error);
+                const errorBoundary = document.getElementById('errorBoundary');
+                const errorMessage = document.getElementById('errorMessage');
+                if (errorMessage) errorMessage.textContent = error.message;
+                if (errorBoundary) errorBoundary.removeAttribute('aria-hidden');
+            } finally {
+                const loadingIndicator = document.getElementById('appLoading');
+                if (loadingIndicator) loadingIndicator.setAttribute('aria-hidden', 'true');
+            }
         });
-
-        // Initialize auth manager only after DOM is fully loaded
-        window.authManager = new AuthManager();
-    } catch (error) {
-        console.error('Error initializing application:', error);
-        const errorBoundary = document.getElementById('errorBoundary');
-        const errorMessage = document.getElementById('errorMessage');
-        if (errorMessage) errorMessage.textContent = error.message;
-        if (errorBoundary) errorBoundary.removeAttribute('aria-hidden');
-    } finally {
-        const loadingIndicator = document.getElementById('appLoading');
-        if (loadingIndicator) loadingIndicator.setAttribute('aria-hidden', 'true');
-    }
-});
-</script>
-	<!-- Time Entry Modal -->
-<div id="timeEntryModal" class="modal" role="dialog" aria-labelledby="modalDate" aria-hidden="true">
-    <div class="modal-content">
-        <h2 id="modalDate"></h2>
-        
-        <!-- Time off section -->
-        <div class="form-group">
-            <label>
-                <input type="checkbox" id="timeOffCheck">
-                Time off request
-            </label>
-            <div id="timeOffApproval" class="checkbox-group" style="display: none;">
-                <label>
-                    <input type="checkbox" id="managerApprovedCheck">
-                    Time off was approved by manager
-                </label>
-            </div>
-        </div>
-
-        <!-- Hours section -->
-        <div id="hoursSection" class="form-group">
-            <label for="hoursInput">Hours Worked</label>
-            <input type="number" id="hoursInput" min="0" max="24" step="0.5" value="8">
-            
-            <div id="overtimeApproval" class="checkbox-group" style="display: none;">
-                <label>
-                    <input type="checkbox" id="overtimeApprovedCheck">
-                    Overtime was approved by manager
-                </label>
-            </div>
-            
-            <div id="shortDayApproval" class="checkbox-group" style="display: none;">
-                <label>
-                    <input type="checkbox" id="shortDayApprovedCheck">
-                    Less than 8h was approved by manager
-                </label>
-            </div>
-        </div>
-
-        <div class="actions">
-            <button id="saveEntry" class="btn">Save</button>
-        </div>
-    </div>
-</div>
+    </script>
 </body>
 </html>
