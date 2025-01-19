@@ -1,11 +1,11 @@
 // modal.js
 (function() {
-    TimeEntryModal = class {
-    constructor(onSave) {
-        this.initialize(onSave);
-        this.setupKeyboardHandling();
-        this.setupOutsideClickHandling();
-    }
+    class TimeEntryModal {
+        constructor(onSave) {
+            this.initialize(onSave);
+            this.setupKeyboardHandling();
+            this.setupOutsideClickHandling();
+        }
 
         initialize(onSave) {
             // Initialize state
@@ -219,47 +219,38 @@
         }
 
         async handleSave() {
-        if (!this.validate()) {
-            return;
-        }
-
-        try {
-            this.setLoading(true);
-            const entry = this.gatherFormData();
-            this.onSave(this.state.selectedDate, entry)
-                .then(() => {
-                    this.state.dirty = false; // Clear dirty state after successful save
-                    this.close();
-                })
-                .catch(error => {
-                    console.error('Error saving entry:', error);
-                    this.showError('Failed to save entry. Please try again.');
-                })
-                .finally(() => {
-                    this.setLoading(false);
-                });
-        } catch (error) {
-            console.error('Error in handleSave:', error);
-            this.showError('Failed to process entry. Please try again.');
-            this.setLoading(false);
-        }
-    }
-
-    close() {
-        if (this.state.dirty && this.state.isOpen) {
-            const canClose = confirm('You have unsaved changes. Are you sure you want to close?');
-            if (!canClose) {
+            if (!this.validate()) {
                 return;
+            }
+
+            try {
+                this.setLoading(true);
+                const entry = this.gatherFormData();
+                await this.onSave(this.state.selectedDate, entry);
+                this.state.dirty = false;
+                this.close();
+            } catch (error) {
+                console.error('Error saving entry:', error);
+                this.showError('Failed to save entry. Please try again.');
+            } finally {
+                this.setLoading(false);
             }
         }
 
-        this.modal.classList.remove('modal-visible');
-        setTimeout(() => {
-            this.modal.style.display = 'none';
-            this.resetState();
-        }, 300);
-    }
-};
+        close() {
+            if (this.state.dirty && this.state.isOpen) {
+                const canClose = confirm('You have unsaved changes. Are you sure you want to close?');
+                if (!canClose) {
+                    return;
+                }
+            }
+
+            this.modal.classList.remove('modal-visible');
+            setTimeout(() => {
+                this.modal.style.display = 'none';
+                this.resetState();
+            }, 300);
+        }
 
 
         validate() {

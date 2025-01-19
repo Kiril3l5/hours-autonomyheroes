@@ -84,6 +84,42 @@ featured_image: /images/demo/home.jpg
                 </button>
             </form>
         </div>
+		
+		<!-- Calendar Container -->
+    <div id="calendarContainer" class="calendar-container">
+        <div class="user-info">
+            Logged in as <span id="userEmail"></span>
+            <button id="logoutBtn" class="btn-logout">Logout</button>
+        </div>
+        
+        <div class="container">
+            <div class="calendar-card">
+                <h1 class="title">Hours Portal</h1>
+                
+                <div class="month-nav">
+                    <button class="nav-btn" id="prevMonth" aria-label="Previous month">←</button>
+                    <span class="month-title" id="currentMonth"></span>
+                    <button class="nav-btn" id="nextMonth" aria-label="Next month">→</button>
+                </div>
+
+                <div class="calendar-grid" id="calendar">
+                    <div class="weekday">Mon</div>
+                    <div class="weekday">Tue</div>
+                    <div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div>
+                    <div class="weekday">Fri</div>
+                    <div class="weekday">Sat</div>
+                    <div class="weekday">Sun</div>
+                </div>
+
+                <div class="submit-section">
+                    <h2>Current Week Summary</h2>
+                    <div id="weekSummary"></div>
+                    <button id="submitWeek" class="btn">Submit Week for Approval</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
         <div id="registerForm" class="auth-form">
             <form id="registerFormElement" novalidate>
@@ -118,41 +154,49 @@ featured_image: /images/demo/home.jpg
 
     <!-- Rest of the content remains the same -->
     
-    <!-- Load Firebase first -->
+      <!-- Load Firebase first -->
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-    <!-- Load application scripts -->
-    <script src="js/error-monitoring.js"></script>
+    <!-- Load utilities first -->
     <script src="js/utils.js"></script>
+    <script src="js/error-monitoring.js"></script>
+
+    <!-- Load core components -->
     <script src="js/modal.js"></script>
     <script src="js/calendar.js"></script>
     <script src="js/auth.js"></script>
 
+    <!-- Initialize application -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        try {
-            // Initialize Firebase
-            firebase.initializeApp({
-                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-                authDomain: "autonomy-heroes.firebaseapp.com",
-                projectId: "autonomy-heroes",
-                storageBucket: "autonomy-heroes.appspot.com",
-                messagingSenderId: "266526530869",
-                appId: "1:266526530869:web:ea95143735be497ca8007c"
-            });
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize Firebase
+                firebase.initializeApp({
+                    apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+                    authDomain: "autonomy-heroes.firebaseapp.com",
+                    projectId: "autonomy-heroes",
+                    storageBucket: "autonomy-heroes.appspot.com",
+                    messagingSenderId: "266526530869",
+                    appId: "1:266526530869:web:ea95143735be497ca8007c"
+                });
 
-            // Initialize auth manager
-            window.authManager = new AuthManager();
-        } catch (error) {
-            console.error('Error initializing application:', error);
-            document.getElementById('errorMessage').textContent = error.message;
-            document.getElementById('errorBoundary').removeAttribute('aria-hidden');
-        } finally {
-            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-        }
-    });
+                // Wait for TimeEntryModal to be available
+                if (!window.TimeEntryModal) {
+                    throw new Error('Required dependencies not loaded');
+                }
+
+                // Initialize auth manager
+                window.authManager = new AuthManager();
+            } catch (error) {
+                console.error('Error initializing application:', error);
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorBoundary').removeAttribute('aria-hidden');
+            } finally {
+                document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+            }
+        });
     </script>
 </body>
 </html>
