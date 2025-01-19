@@ -171,52 +171,45 @@ featured_image: /images/demo/home.jpg
 </div>
 
 <!-- Load Firebase first -->
-<script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
-<script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
-<script defer src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.14.0/firebase-firestore-compat.js"></script>
 
-<!-- Then load our scripts in correct order -->
-<script defer src="js/error-monitoring.js"></script>
-<script defer src="js/utils.js"></script>
-<script defer src="js/modal.js"></script>
-<script defer src="js/calendar.js"></script>
-<script defer src="js/auth.js"></script>
+<!-- Load application scripts -->
+<script src="js/error-monitoring.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/modal.js"></script>
+<script src="js/calendar.js"></script>
+<script src="js/auth.js"></script>
 
-<!-- Initialize app last -->
 <script>
-window.addEventListener('DOMContentLoaded', () => {
-    // Wait for all scripts to load
-    Promise.all([
-        new Promise(resolve => {
-            if (window.TimeEntryModal) resolve();
-            else window.addEventListener('load', resolve);
-        }),
-        new Promise(resolve => {
-            if (window.TimeTrackingCalendar) resolve();
-            else window.addEventListener('load', resolve);
-        })
-    ]).then(() => {
-        try {
-            // Initialize Firebase
-            firebase.initializeApp({
-                apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
-                authDomain: "autonomy-heroes.firebaseapp.com",
-                projectId: "autonomy-heroes",
-                storageBucket: "autonomy-heroes.appspot.com",
-                messagingSenderId: "266526530869",
-                appId: "1:266526530869:web:ea95143735be497ca8007c"
-            });
+document.addEventListener('DOMContentLoaded', function() {
+    // Verify TimeEntryModal was loaded
+    if (!window.TimeEntryModal) {
+        console.error('TimeEntryModal failed to load');
+        return;
+    }
 
-            // Initialize auth manager
-            window.authManager = new AuthManager();
-        } catch (error) {
-            console.error('Error initializing application:', error);
-            document.getElementById('errorMessage').textContent = error.message;
-            document.getElementById('errorBoundary').removeAttribute('aria-hidden');
-        } finally {
-            document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
-        }
-    });
+    try {
+        // Initialize Firebase
+        firebase.initializeApp({
+            apiKey: "AIzaSyB1dlHRhLA71PxCgVLjOieUcUF22DWx6zY",
+            authDomain: "autonomy-heroes.firebaseapp.com",
+            projectId: "autonomy-heroes",
+            storageBucket: "autonomy-heroes.appspot.com",
+            messagingSenderId: "266526530869",
+            appId: "1:266526530869:web:ea95143735be497ca8007c"
+        });
+
+        // Initialize auth manager
+        window.authManager = new AuthManager();
+    } catch (error) {
+        console.error('Error initializing application:', error);
+        document.getElementById('errorMessage').textContent = error.message;
+        document.getElementById('errorBoundary').removeAttribute('aria-hidden');
+    } finally {
+        document.getElementById('appLoading').setAttribute('aria-hidden', 'true');
+    }
 });</script>
 </body>
 </html>
